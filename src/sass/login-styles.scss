@@ -1,0 +1,188 @@
+/* Mixins */
+
+@mixin border-radius($radius) {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  -ms-border-radius: $radius;
+  -o-border-radius: $radius;
+  border-radius: $radius;
+}
+
+@mixin transition($transition) {
+  -o-transition: $transition;
+  -webkit-transition: $transition;
+  -moz-transition: $transition;
+  -ms-transition: $transition;
+  transition: $transition;
+}
+
+@mixin box-shadow($boxShadow) {
+  -o-box-shadow: $boxShadow;
+  -webkit-box-shadow: $boxShadow;
+  -moz-box-shadow: $boxShadow;
+  -ms-box-shadow: $boxShadow;
+  box-shadow: $boxShadow;
+}
+
+@mixin linear-gradient($light, $dark) {
+  background-color: $light;
+  background-image: -khtml-gradient(linear, left top, left bottom, from($light), to($dark));
+  background-image: -webkit-gradient(linear, left top, left bottom, from($light), to($dark)); /* Saf4+, Chrome */
+  background-image: -webkit-linear-gradient($light, $dark); /* Chrome 10+, Saf5.1+ */
+  background-image: -moz-linear-gradient($light, $dark); /* FF3.6 */
+  background-image: -ms-linear-gradient($light, $dark); /* IE10 */
+  background-image: -o-linear-gradient($light, $dark); /* Opera 11.10+ */
+  background-image: linear-gradient($light, $dark);
+  //  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$light',endColorstr='$dark');
+}
+
+/* Styles Reset */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+
+body {
+  line-height: 1;
+}
+
+ol, ul {
+  list-style: none;
+}
+
+blockquote, q {
+  quotes: none;
+}
+
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Application styles */
+
+html {
+  font-family: "Myriad Pro", Lucida, Arial;
+  background: url("../../public/images/background.jpg");
+}
+
+header {
+
+  position: relative;
+  border: 20px 0;
+  background: #682c5f;
+  background-image: url("../../public/images/header-background.png");
+  background-repeat: repeat-x;
+
+  a {
+    color: #fff;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+}
+
+section#main {
+  min-height: 450px;
+  margin: 40px 20px 20px 20px;
+
+}
+
+section#content {
+
+  a {
+    color: #444;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  #auth {
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background: #ffffff;
+    text-align: center;
+
+    position: absolute;
+    top: 0;
+    bottom: 100px;
+    left: 0;
+    right: 0;
+    height: 240px;
+    padding-top: 20px;
+    margin: auto;
+    width: 50%;
+    min-width: 460px;
+    max-width: 460px;
+
+    ul {
+
+      li {
+        margin: 20px;
+        list-style: none;
+        font-weight: 300;
+
+        img {
+          width: 32px;
+          vertical-align: middle;
+          margin-right: 10px;
+        }
+      }
+    }
+
+    @media screen and (max-width: 640px) {
+
+      bottom: 50px;
+      height: 190px;
+      width: 65%;
+      font-size: 0.9em;
+      min-width: 300px;
+      max-width: 420px;
+
+      ul {
+        li {
+          margin: 5px;
+        }
+      }
+
+      >img {
+        width: 220px;
+      }
+    }
+  }
+
+}

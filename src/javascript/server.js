@@ -1,0 +1,142 @@
+////////////////////////////////////////////////////////////////////////////////////
+// Imports
+////////////////////////////////////////////////////////////////////////////////////
+
+var express = require('express');
+var path = require('path');
+var favicon = require('serve-favicon');
+var session = require('express-session')
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
+var passport = require('passport');
+var role = require('./connect-roles-fixed');
+var routes = require('./routes/index');
+var users = require('./routes/users');
+var user = require('./models/user');
+var auth = require('./routes/auth');
+var pemClients = require('./routes/pemClients');
+
+var authMiddleware = require('./middlewares/authMiddleware');
+var authService = require('./service/authService');
+
+var requestLogger = require('./lib/requestLogger');
+
+////////////////////////////////////////////////////////////////////////////////////
+// Applications
+////////////////////////////////////////////////////////////////////////////////////
+
+var app = express();
+
+console.log("Environment: " + (app.get('env')));
+
+app.disable("x-powered-by");
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hjs');
+app.set("view options", {layout: false});
+
+app.use( (req, res, next) => {
+	req.forwardedSecure = req.headers["x-forwarded-proto"] === "https";
+	return next();
+});
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Security
+////////////////////////////////////////////////////////////////////////////////////
+
+passport.serializeUser(authService.serializeUser);
+passport.deserializeUser(authService.deserializeUser);
+passport.use(authMiddleware.GoogleStrategy);
+passport.use(authMiddleware.BasicStrategy);
+passport.use(authMiddleware.ClientPasswordStrategy);
+passport.use(authMiddleware.BearerStrategy);
+
+role.use(authService.checkRoleAnonymous);
+role.use(authService.ROLE_AGENT, authService.checkRoleAgent);
+role.use(authService.ROLE_SUPER_AGENT, authService.checkRoleSuperAgent);
+role.use(authService.ROLE_ADMIN, authService.checkRoleAdmin);
+role.setFailureHandler(authService.failureHandler);
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Middlewares
+////////////////////////////////////////////////////////////////////////////////////
+
+app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(requestLogger());
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(session({
+	resave: true,
+	saveUninitialized: true,
+	secret: process.env.SESSION_SECRET,
+	maxAge: new Date(Date.now() + 3600000),
+	key: "sessionId"
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(role);
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Routes
+////////////////////////////////////////////////////////////////////////////////////
+
+app.use('/', routes);
+app.use('/users', users);
+app.use('/auth', auth);
+app.use('/pem-clients', pemClients);
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// 404
+////////////////////////////////////////////////////////////////////////////////////
+
+// catch 404 and forward to error handler
+app.use((req, res, next) => {
+	var err = new Error('Not Found');
+	err.status = 404;
+	next(err);
+});
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// 500 - error handlers
+////////////////////////////////////////////////////////////////////////////////////
+
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+	app.use((err, req, res, next) => {
+		res.status(err.status || 500);
+		res.render('error', {
+			message: err.message,
+			error: err
+		});
+	});
+}
+
+// production error handler
+// no stacktraces leaked to user
+app.use((err, req, res, next) => {
+	res.status(err.status || 500);
+	res.render('error', {
+		message: err.message,
+		error: {}
+	});
+});
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Exports
+////////////////////////////////////////////////////////////////////////////////////
+
+module.exports = {
+	app: app
+}
