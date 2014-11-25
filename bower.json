@@ -1,0 +1,6 @@
+{
+  "name": "gtfs-webapp",
+  "dependencies": {
+    "foundation": "zurb/bower-foundation"
+  }
+}

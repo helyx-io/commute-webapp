@@ -36,6 +36,10 @@ app.disable("x-powered-by");
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hjs');
 app.set("view options", {layout: false});
+app.set('layout', 'layout');
+app.disable('view cache');
+app.engine('hjs', require('hogan-express'));
+
 
 app.use( (req, res, next) => {
 	req.forwardedSecure = req.headers["x-forwarded-proto"] === "https";

@@ -25,6 +25,11 @@ gulp.task('copy-public', function () {
 		.pipe(gulp.dest('build/public'));
 });
 
+gulp.task('copy-public-scripts', function () {
+	return gulp.src('public/scripts/**/*')
+		.pipe(gulp.dest('build/public/scripts'));
+});
+
 gulp.task('copy-views', function () {
 	return gulp.src('views/*')
 		.pipe(gulp.dest('build/views'));
@@ -35,13 +40,27 @@ gulp.task('copy-project-resources', function () {
 		.pipe(gulp.dest('build/'));
 });
 
-gulp.task('sass', function () {
-	gulp.src('./src/sass/*.scss')
+gulp.task('build-sass', function () {
+	gulp.src('src/sass/*.scss')
 		.pipe(sourcemaps.init())
 		.pipe(sass())
 		.pipe(sourcemaps.write())
 		.pipe(gulp.dest('build/public/styles'));
 });
 
+gulp.task('watch-sass', function() {
+	gulp.watch('src/sass/*.scss', ['build-sass']);
+});
+
+gulp.task('watch-views', function() {
+	gulp.watch('views/*', ['copy-views']);
+});
+
+gulp.task('watch-public-scripts', function() {
+	gulp.watch('public/scripts/**/*.js', ['copy-public-scripts']);
+});
+
+gulp.task('watch', ['watch-sass', 'watch-views', 'watch-public-scripts']);
+
 // default gulp task
-gulp.task('default', ['build-sources', 'copy-public', 'copy-views', 'copy-project-resources', 'sass']);
+gulp.task('default', ['build-sources', 'copy-public', 'copy-views', 'copy-project-resources', 'build-sass']);
