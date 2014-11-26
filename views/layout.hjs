@@ -30,8 +30,6 @@
     <meta name="msapplication-TileImage" content="/mstile-144x144.png" />
 </head>
 <body>
-    {{<layout}}
-        {{$content}}{{/content}}
-    {{/layout}}
+    {{{ yield }}}
 </body>
 </html>
