@@ -28,13 +28,19 @@
 	    <tr>
 		    <th>Id</th>
 		    <th>Private Key</th>
-		    <th>Certificate</th>
+            <th>Certificate</th>
+            <th>Fingerprint</th>
+            <th>Infos</th>
+            <th>Actions</th>
 	    </tr>
 		{{#pems}}
 	    <tr>
 		    <td>{{id}}</td>
 		    <td><a href="/pem-clients/{{id}}/private-key">Download</a></td>
             <td><a href="/pem-clients/{{id}}/certificate">Download</a></td>
+            <td>{{fingerprint}}</td>
+            <td><a href="/pem-clients/{{id}}/certificate/infos">View</a></td>
+            <td><a href="/pem-clients/{{id}}/remove">Supprimer</a></td>
 	    </tr>
 		{{/pems}}
     </table>
