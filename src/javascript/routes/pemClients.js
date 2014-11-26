@@ -45,6 +45,7 @@ router.get('/:id/private-key', security.ensureAuthenticated, (req, res) => {
 		}
 		else {
 			res.contentType('text/plain');
+			res.header('Content-Disposition', 'attachment;filename="key.pem"');
 			res.send(pem.privateKey);
 		}
 	});
@@ -57,6 +58,7 @@ router.get('/:id/certificate', security.ensureAuthenticated, (req, res) => {
 		}
 		else {
 			res.contentType('text/plain');
+			res.header('Content-Disposition', 'attachment;filename="certificate.pem"');
 			res.send(pem.certificate);
 		}
 	});
