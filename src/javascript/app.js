@@ -2,22 +2,20 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var debug = require('debug')('untitled');
 require("es6-shim");
+
 var models = require("./models");
 var passport = require('passport');
 var config = require('./conf/config');
-////////////////////////////////////////////////////////////////////////////////////
-// Variables
-////////////////////////////////////////////////////////////////////////////////////
-
-var start = new Date()
-var server;
-
+var logger = require('./log/logger');
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Application Initialization
 ////////////////////////////////////////////////////////////////////////////////////
+
+var start = new Date();
+
+var gracefullyClosing = false;
 
 var server = require('./server');
 
@@ -40,7 +38,7 @@ app.use((req, res, next) => {
 
 models.sequelize.sync().success(function () {
   var server = app.listen(app.get('port'), function() {
-    debug('Express server listening on port ' + server.address().port);
+    logger.debug('Express server listening on port ' + server.address().port);
   });
 });
 

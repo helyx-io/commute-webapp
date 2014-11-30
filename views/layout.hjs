@@ -8,12 +8,14 @@
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
 
     <link rel="stylesheet" href="/styles/app.css" />
+    <link rel="stylesheet" media="screen" href="/styles/login-styles.css">
     <link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />
     <link rel="stylesheet" href="/bower_components/foundation/css/normalize.css" />
 
     <script src="/bower_components/modernizr/modernizr.js"></script>
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/foundation/js/foundation.min.js"></script>
+    <script src="/bower_components/moment/min/moment.min.js"></script>
 
     <script src="/scripts/app.js"></script>
 
@@ -31,5 +33,20 @@
 </head>
 <body>
     {{{ yield }}}
+
+    <script type="text/javascript">
+        /*
+					var _gaq = _gaq || [];
+					_gaq.push(['_setAccount', 'UA-1889791-20']);
+					_gaq.push(['_trackPageview']);
+
+					(function() {
+					var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+					ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+					var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+					})();
+		*/
+    </script>
+
 </body>
 </html>

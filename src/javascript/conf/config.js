@@ -2,16 +2,29 @@
 // Exports
 ////////////////////////////////////////////////////////////////////////////////////
 
+var appName = 'helyx.io';
+
 module.exports = {
 	hostname: process.env.APP_HOSTNAME || 'dev.helyx.org',
 	port: process.env.APP_HTTP_PORT || 9000,
-	appname: 'helyx.io',
+	appname: appName,
 	auth: {
 		admin: (process.env.AUTH_ADMIN || 'alexis.kinsella@gmail.com').split(','),
 		google: {
 			clientId: process.env.AUTH_GOOGLE_CLIENT_ID,
 			clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET,
 			callbackUrl: process.env.AUTH_GOOGLE_CALLBACK_URL || 'http://localhost'
+		}
+	},
+	logger: {
+		threshold: process.env.LOGGER_THRESHOLD_LEVEL || 'debug',
+		console: {
+			level: process.env.LOGGER_CONSOLE_LEVEL || 'debug'
+		},
+		file: {
+			level: process.env.LOGGER_FILE_LEVEL || 'debug',
+			directory: process.env.LOGGER_FILE_DIRECTORY || 'logs',
+			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
 	sequelize: {

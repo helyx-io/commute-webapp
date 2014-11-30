@@ -15,12 +15,14 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var user = require('./models/user');
 var auth = require('./routes/auth');
+var api = require('./routes/api');
 var pemClients = require('./routes/pemClients');
 
 var authMiddleware = require('./middlewares/authMiddleware');
 var authService = require('./service/authService');
 
 var requestLogger = require('./lib/requestLogger');
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Applications
@@ -51,12 +53,10 @@ app.use( (req, res, next) => {
 // Security
 ////////////////////////////////////////////////////////////////////////////////////
 
+// TODO: Fix me to support ClientJWTBearerStrategy
 passport.serializeUser(authService.serializeUser);
 passport.deserializeUser(authService.deserializeUser);
 passport.use(authMiddleware.GoogleStrategy);
-passport.use(authMiddleware.BasicStrategy);
-passport.use(authMiddleware.ClientPasswordStrategy);
-passport.use(authMiddleware.BearerStrategy);
 
 role.use(authService.checkRoleAnonymous);
 role.use(authService.ROLE_AGENT, authService.checkRoleAgent);
@@ -73,7 +73,7 @@ app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(requestLogger());
+//app.use(requestLogger());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
@@ -95,6 +95,7 @@ app.use(role);
 app.use('/', routes);
 app.use('/users', users);
 app.use('/auth', auth);
+app.use('/api', api);
 app.use('/pem-clients', pemClients);
 
 

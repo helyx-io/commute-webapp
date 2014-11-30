@@ -92,7 +92,7 @@ table {
 
 html {
   font-family: "Myriad Pro", Lucida, Arial;
-  background: url("../../public/images/background.jpg");
+  background: url("/images/background.jpg");
 }
 
 header {
@@ -100,7 +100,7 @@ header {
   position: relative;
   border: 20px 0;
   background: #682c5f;
-  background-image: url("../../public/images/header-background.png");
+  background-image: url("/images/header-background.png");
   background-repeat: repeat-x;
 
   a {
