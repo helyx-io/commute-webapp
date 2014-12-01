@@ -45,8 +45,7 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
 				// TODO - verify client_id, scope and expiration are valid from the buf variable above
 
 				var accessToken = AccessToken.build({
-					clientID: client.id,
-					scope: scope
+					clientID: client.id
 				});
 				accessToken.save().complete((err, accessToken) => {
 					if (err != undefined) {
