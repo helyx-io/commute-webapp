@@ -10,7 +10,6 @@ var modulePackage = require('../package.json');
 var security = require('../lib/security');
 var oauth2orize = require('oauth2orize');
 var jwtBearer = require('oauth2orize-jwt-bearer').Exchange;
-var verifier = crypto.createVerify("RSA-SHA256");
 
 var models = require('../models');
 
@@ -34,8 +33,9 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
 		} else {
 			var pub = pem.publicKey;
 
+			var verifier = crypto.createVerify("RSA-SHA256");
 			//verifier.update takes in a string of the data that is encrypted in the signature
-			verifier.update(JSON.stringify(data));
+			verifier.update(data);
 
 			if (verifier.verify(pub, signature, 'base64')) {
 				//base64url decode data
@@ -56,6 +56,9 @@ server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(functio
 						done(null, accessToken);
 					}
 				});
+			}
+			else {
+				done(new Error("Could not verify data: '" + data + "' with signature: '" + signature + "'"));
 			}
 		}
 	});
