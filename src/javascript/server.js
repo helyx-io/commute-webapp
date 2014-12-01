@@ -57,6 +57,7 @@ app.use( (req, res, next) => {
 passport.serializeUser(authService.serializeUser);
 passport.deserializeUser(authService.deserializeUser);
 passport.use(authMiddleware.GoogleStrategy);
+passport.use(authMiddleware.ClientJWTBearerStrategy);
 
 role.use(authService.checkRoleAnonymous);
 role.use(authService.ROLE_AGENT, authService.checkRoleAgent);

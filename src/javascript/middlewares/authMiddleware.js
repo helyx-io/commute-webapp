@@ -6,14 +6,32 @@ var passport = require('passport');
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
+var ClientJWTBearerStrategy = require('passport-oauth2-jwt-bearer').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var config = require('../conf/config');
 var _ = require('underscore');
 var models  = require('../models');
 
+var AccessToken = models.AccessToken;
+var PemClient = models.PemClient;
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Strategies
 ////////////////////////////////////////////////////////////////////////////////////
+
+var ClientJWTBearerStrategy = new ClientJWTBearerStrategy(
+	function(claimSetIss, done) {
+		PemClient.find({ where: { clientId: claimSetIss }}).complete((err, pemClient) => {
+			if (err) {
+				return done(err);
+			} else if (!pemClient) {
+				return done(null, false);
+			} else {
+				return done(null, pemClient);
+			}
+		});
+	}
+);
 
 var GoogleStrategy = new GoogleStrategy({
 	clientID: config.auth.google.clientId,
@@ -144,5 +162,6 @@ module.exports = {
 	GoogleStrategy: GoogleStrategy,
 	BasicStrategy: BasicStrategy,
 	ClientPasswordStrategy: ClientPasswordStrategy,
-	BearerStrategy: BearerStrategy
+	BearerStrategy: BearerStrategy,
+	ClientJWTBearerStrategy: ClientJWTBearerStrategy
 };

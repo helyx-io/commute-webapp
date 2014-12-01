@@ -11,7 +11,7 @@ var alg = 'RS256';
 var token = jwt.encode(obj, key, alg);
 
 
-request({ url: "http://localhost:9000/api/token" }, function(error, response, body) {
+request.post({ url: "http://localhost:9000/api/token", body: {assertion: token}, json: true }, function(error, response, body) {
 
 	if (error != undefined) {
 		console.error("Error message: " + error.message);

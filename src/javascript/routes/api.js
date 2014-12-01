@@ -73,7 +73,7 @@ router.get('/', security.ensureAuthenticated, (req, res) => {
 	res.json({version: modulePackage.version});
 });
 
-router.get('/token', passport.authenticate(['oauth2-jwt-bearer'], { session: false }), server.token(), server.errorHandler());
+router.post('/token', passport.authenticate(['oauth2-jwt-bearer'], { session: false }), server.token(), server.errorHandler());
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
