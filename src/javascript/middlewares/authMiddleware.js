@@ -14,6 +14,8 @@ var models  = require('../models');
 
 var AccessToken = models.AccessToken;
 var PemClient = models.PemClient;
+var Client = models.Client;
+var User = models.User;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Strategies
@@ -21,7 +23,7 @@ var PemClient = models.PemClient;
 
 var ClientJWTBearerStrategy = new ClientJWTBearerStrategy(
 	function(claimSetIss, done) {
-		PemClient.find({ where: { clientId: claimSetIss }}).complete((err, pemClient) => {
+		PemClient.find({ where: { id: claimSetIss }}).complete((err, pemClient) => {
 			if (err) {
 				return done(err);
 			} else if (!pemClient) {
@@ -40,13 +42,13 @@ var GoogleStrategy = new GoogleStrategy({
 }, (accessToken, refreshToken, identifier, profile, done) => {
 	return process.nextTick(() => {
 		profile.identifier = identifier;
-		models.User.find({
+		User.find({
 			where: { email: profile.emails[0].value }
 		}).complete((err, user) => {
 			if (err) {
 				return done(err, null);
 			} else if (!user) {
-				var user = models.User.build({
+				var user = User.build({
 					email: profile.emails[0].value,
 					firstName: profile.name.givenName,
 					lastName: profile.name.familyName,
@@ -86,7 +88,7 @@ var GoogleStrategy = new GoogleStrategy({
  the specification, in practice it is quite common.
  */
 var BasicStrategy = new BasicStrategy((username, password, done) => {
-	models.Client.find({
+	Client.find({
 		where: { clientId: clientId }
 	}).complete((err, client) => {
 		if (err) {
@@ -103,7 +105,7 @@ var BasicStrategy = new BasicStrategy((username, password, done) => {
 });
 
 ClientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, done) => {
-	models.Client.find({
+	Client.find({
 		where: { clientId: clientId }
 	}).complete((err, client) => {
 		if (err) {
@@ -128,14 +130,14 @@ ClientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, don
  the authorizing user.
  */
 var BearerStrategy = new BearerStrategy((accessToken, done) => {
-	return models.AccessTokens.find(accessToken, (err, token) => {
+	return AccessTokens.find(accessToken, (err, token) => {
 		if (err) {
 			return done(err);
 		}
 		if (!token) {
 			return done(null, false);
 		}
-		models.User.find({
+		User.find({
 			where: { userID: token.userID }
 		}).complete((err, user) => {
 			var info;
