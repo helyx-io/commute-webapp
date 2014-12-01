@@ -59,8 +59,22 @@ router.get('/:id/private-key', security.ensureAuthenticated, (req, res) => {
 		}
 		else {
 			res.contentType('text/plain');
-			res.header('Content-Disposition', 'attachment;filename="key.pem"');
+			res.header('Content-Disposition', 'attachment;filename="private-key.pem"');
 			res.send(pem.privateKey);
+		}
+	});
+});
+
+router.get('/:id/public-key', security.ensureAuthenticated, (req, res) => {
+	PemClient.find({where: {userId: req.user.id, id: req.params.id}}).complete((err, pem) => {
+		if (err != undefined) {
+			logger.info(err.message, "Error:", new Error().stack, "Stack:" , err.stack);
+			res.status(500).send(err.message);
+		}
+		else {
+			res.contentType('text/plain');
+			res.header('Content-Disposition', 'attachment;filename="public-key.pem"');
+			res.send(pem.publicKey);
 		}
 	});
 });
@@ -111,29 +125,37 @@ router.get('/generate', security.ensureAuthenticated, (req, res) => {
 			res.status(500).send(err.message);
 		}
 		else {
-			nodePem.getFingerprint(keys.certificate, (err, result) => {
-
+			nodePem.getFingerprint(keys.certificate, (err, fpResult) => {
 				if (err != undefined) {
 					logger.info(err.message, "\nError:", new Error().stack, "\nStack:" , err.stack);
 					res.status(500).send(err.message);
 				}
 				else {
-					var pemClient = PemClient.build({
-						userId: req.user.id,
-						privateKey: keys.serviceKey,
-						certificate: keys.certificate,
-						fingerprint: result.fingerprint,
-						keyPassword: options.keyPassword,
-						certPassword: options.certPassword,
-						days: options.days
-					});
-					pemClient.save().complete((err, pemClient) => {
+					nodePem.getPublicKey(keys.certificate, (err, pkResult) => {
 						if (err != undefined) {
 							logger.info(err.message, "\nError:", new Error().stack, "\nStack:" , err.stack);
 							res.status(500).send(err.message);
 						}
 						else {
-							res.redirect("/pem-clients/");
+							var pemClient = PemClient.build({
+								userId: req.user.id,
+								privateKey: keys.serviceKey,
+								publicKey: pkResult.publicKey,
+								certificate: keys.certificate,
+								fingerprint: fpResult.fingerprint,
+								keyPassword: options.keyPassword,
+								certPassword: options.certPassword,
+								days: options.days
+							});
+							pemClient.save().complete((err, pemClient) => {
+								if (err != undefined) {
+									logger.info(err.message, "\nError:", new Error().stack, "\nStack:", err.stack);
+									res.status(500).send(err.message);
+								}
+								else {
+									res.redirect("/pem-clients/");
+								}
+							});
 						}
 					});
 				}

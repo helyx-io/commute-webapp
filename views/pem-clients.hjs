@@ -6,6 +6,7 @@
 	    <tr>
 		    <th>Id</th>
 		    <th>Private Key</th>
+            <th>Public Key</th>
             <th>Certificate</th>
             <th>Fingerprint</th>
             <th>Key Password</th>
@@ -19,6 +20,7 @@
 	    <tr>
 		    <td>{{id}}</td>
 		    <td><a href="/pem-clients/{{id}}/private-key">Download</a></td>
+		    <td><a href="/pem-clients/{{id}}/public-key">Download</a></td>
             <td><a href="/pem-clients/{{id}}/certificate">Download</a></td>
             <td>{{fingerprint}}</td>
             <td>{{keyPassword}}</td>
