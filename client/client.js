@@ -19,7 +19,7 @@ var body = {
 	grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer"
 };
 
-request.post({ url: "http://localhost:9000/api/token", body: body, json: true }, function(error, response, body) {
+request.post({ url: "http://localhost:9000/auth/token", body: body, json: true }, function(error, response, body) {
 
 	if (error != undefined) {
 		console.error("Error message: " + error.message);

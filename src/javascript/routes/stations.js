@@ -2,16 +2,13 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var fs = require('fs');
+////////////////////////////////////////////////////////////////////////////////////
+// Routes
+////////////////////////////////////////////////////////////////////////////////////
 
 var express = require('express');
-var passport = require('passport');
-
-var modulePackage = require('../package.json');
 var security = require('../lib/security');
-var models = require('../models');
 
-var stations = require('./stations.js');
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
@@ -19,11 +16,9 @@ var stations = require('./stations.js');
 
 var router = express.Router();
 
-router.get('/', security.ensureAuthenticated, (req, res) => {
-	res.json({version: modulePackage.version});
+router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+  res.json([{ id: 10 }]);
 });
-
-router.use("/stations", stations);
 
 
 ////////////////////////////////////////////////////////////////////////////////////

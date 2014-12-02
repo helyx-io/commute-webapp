@@ -5,7 +5,7 @@
 var appName = 'helyx.io';
 
 module.exports = {
-	hostname: process.env.APP_HOSTNAME || 'dev.helyx.org',
+	hostname: process.env.APP_HOSTNAME || 'gtfs.helyx.org',
 	port: process.env.APP_HTTP_PORT || 9000,
 	appname: appName,
 	auth: {
