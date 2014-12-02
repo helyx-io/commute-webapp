@@ -7,7 +7,14 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 var express = require('express');
+var moment = require('moment');
+
+var logger = require('../log/logger');
+
 var security = require('../lib/security');
+
+var models = require('../models');
+var Agency = models.Agency;
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -17,7 +24,24 @@ var security = require('../lib/security');
 var router = express.Router();
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
-  res.json([{ id: 10 }]);
+
+  Agency.findAll({}).complete((err, agencies) => {
+
+    if (err) {
+      res.json(500, { message: err.message });
+    }
+    else {
+      agencies = agencies.map((agency) => {
+        agency = agency.toJSON();
+        agency.createdAt = moment(agency.createdAt).format();
+        agency.updatedAt = moment(agency.updatedAt).format();
+        return agency;
+      });
+
+      res.json(agencies);
+    }
+  });
+
 });
 
 

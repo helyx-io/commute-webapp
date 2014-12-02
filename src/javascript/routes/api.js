@@ -11,7 +11,7 @@ var modulePackage = require('../package.json');
 var security = require('../lib/security');
 var models = require('../models');
 
-var stations = require('./stations.js');
+var agencies = require('./agencies.js');
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
@@ -19,11 +19,11 @@ var stations = require('./stations.js');
 
 var router = express.Router();
 
-router.get('/', security.ensureAuthenticated, (req, res) => {
+router.get('/', (req, res) => {
 	res.json({version: modulePackage.version});
 });
 
-router.use("/stations", stations);
+router.use("/agencies", agencies);
 
 
 ////////////////////////////////////////////////////////////////////////////////////

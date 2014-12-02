@@ -4,13 +4,15 @@
 
 var express = require('express');
 var nodePem = require('pem');
-var models = require('../models');
-var security = require('../lib/security');
-var logger = require('../log/logger');
 var generatePassword = require('password-generator');
 var moment = require('moment');
 
+var security = require('../lib/security');
+var logger = require('../log/logger');
+
+var models = require('../models');
 var PemClient = models.PemClient;
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
