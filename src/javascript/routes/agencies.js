@@ -31,14 +31,24 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
       res.json(500, { message: err.message });
     }
     else {
-      agencies = agencies.map((agency) => {
-        agency = agency.toJSON();
-        agency.createdAt = moment(agency.createdAt).format();
-        agency.updatedAt = moment(agency.updatedAt).format();
-        return agency;
-      });
-
+      agencies = agencies.map((agency) => { return agency.toJSON  (); });
       res.json(agencies);
+    }
+  });
+
+});
+
+router.get('/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+
+  var agencyId = req.query.agencyId;
+
+  Agency.find({ where: { id: agencyId } }).complete((err, agency) => {
+
+    if (err) {
+      res.json(500, { message: err.message });
+    }
+    else {
+      res.json(agency.toJSON());
     }
   });
 

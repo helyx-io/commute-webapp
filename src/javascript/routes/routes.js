@@ -2,17 +2,19 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var fs = require('fs');
+////////////////////////////////////////////////////////////////////////////////////
+// Routes
+////////////////////////////////////////////////////////////////////////////////////
 
 var express = require('express');
-var passport = require('passport');
+var moment = require('moment');
 
-var modulePackage = require('../package.json');
+var logger = require('../log/logger');
+
 var security = require('../lib/security');
-var models = require('../models');
 
-var agencies = require('./agencies.js');
-var routes = require('./routes.js');
+var models = require('../models');
+var Route = models.Route;
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -21,12 +23,20 @@ var routes = require('./routes.js');
 
 var router = express.Router();
 
-router.get('/', (req, res) => {
-	res.json({version: modulePackage.version});
-});
+router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-router.use("/agencies", agencies);
-router.use("/routes", routes);
+  Route.findAll({}).complete((err, routes) => {
+
+    if (err) {
+      res.json(500, { message: err.message });
+    }
+    else {
+      routes = routes.map((route) => { return route.toJSON(); });
+      res.json(routes);
+    }
+  });
+
+});
 
 
 ////////////////////////////////////////////////////////////////////////////////////

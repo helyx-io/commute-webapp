@@ -11,15 +11,19 @@ var moment = require('moment');
 
 module.exports = function(sequelize, DataTypes) {
 
-	var Agency = sequelize.define("Agency", {
+	var Route = sequelize.define("Route", {
 		agency_key: DataTypes.STRING,
+		route_id: DataTypes.STRING,
 		agency_id: DataTypes.STRING,
-		agency_name: DataTypes.STRING,
-		agency_url: DataTypes.STRING,
-		agency_timezone: DataTypes.STRING,
-		agency_lang: DataTypes.STRING
+		route_short_name: DataTypes.STRING,
+		route_long_name: DataTypes.STRING,
+		route_desc: DataTypes.STRING,
+		route_type: DataTypes.INTEGER,
+		route_url: DataTypes.STRING,
+		route_color: DataTypes.STRING,
+		route_text_color: DataTypes.STRING
 	}, {
-		tableName: "agencies",
+		tableName: "routes",
 		instanceMethods: {
 			toJSON: function() {
 				var obj = this.get({ plain: true });
@@ -38,5 +42,5 @@ module.exports = function(sequelize, DataTypes) {
 		}
 	});
 
-	return Agency;
+	return Route;
 };
