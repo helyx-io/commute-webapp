@@ -11,7 +11,7 @@ var moment = require('moment');
 
 module.exports = function(sequelize, DataTypes) {
 
-	var Agency = sequelize.define("Agency", {
+	return sequelize.define("Agency", {
 		agency_key: DataTypes.STRING,
 		agency_id: DataTypes.STRING,
 		agency_name: DataTypes.STRING,
@@ -20,6 +20,7 @@ module.exports = function(sequelize, DataTypes) {
 		agency_lang: DataTypes.STRING
 	}, {
 		tableName: "agencies",
+		underscored: true,
 		instanceMethods: {
 			toJSON: function() {
 				var obj = this.get({ plain: true });
@@ -38,5 +39,4 @@ module.exports = function(sequelize, DataTypes) {
 		}
 	});
 
-	return Agency;
 };

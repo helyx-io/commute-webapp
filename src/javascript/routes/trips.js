@@ -14,7 +14,7 @@ var logger = require('../log/logger');
 var security = require('../lib/security');
 
 var models = require('../models');
-var Route = models.Route;
+var Trip = models.Trip
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -25,31 +25,31 @@ var router = express.Router();
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-  Route.findAll({}).complete((err, routes) => {
+  Trip.findAll({ limit: 1000 }).complete((err, trips) => {
 
     if (err) {
       res.json(500, { message: err.message });
     }
     else {
-      routes = routes.map((route) => { return route.toJSON(); });
-      res.json(routes);
+      trips = trips.map((trip) => { return trip.toJSON(); });
+      res.json(trips);
     }
   });
 
 });
 
 
-router.get('/:routeId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-  var routeId = req.params.routeId;
+  var tripId = req.params.tripId;
 
-  Route.find({ where:{ route_id: routeId } }).complete((err, route) => {
+  Trip.find({ where:{ trip_id: tripId } }).complete((err, trip) => {
 
     if (err) {
       res.json(500, { message: err.message });
     }
     else {
-      res.json(route.toJSON());
+      res.json(trip.toJSON());
     }
   });
 

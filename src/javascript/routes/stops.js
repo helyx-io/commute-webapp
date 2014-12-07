@@ -14,7 +14,7 @@ var logger = require('../log/logger');
 var security = require('../lib/security');
 
 var models = require('../models');
-var Route = models.Route;
+var Stop = models.Stop
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -25,31 +25,31 @@ var router = express.Router();
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-  Route.findAll({}).complete((err, routes) => {
+  Stop.findAll({ limit: 1000 }).complete((err, stops) => {
 
     if (err) {
       res.json(500, { message: err.message });
     }
     else {
-      routes = routes.map((route) => { return route.toJSON(); });
-      res.json(routes);
+      stops = stops.map((stop) => { return stop.toJSON(); });
+      res.json(stops);
     }
   });
 
 });
 
 
-router.get('/:routeId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-  var routeId = req.params.routeId;
+  var stopId = req.params.stopId;
 
-  Route.find({ where:{ route_id: routeId } }).complete((err, route) => {
+  Stop.find({ where:{ stop_id: stopId } }).complete((err, stop) => {
 
     if (err) {
       res.json(500, { message: err.message });
     }
     else {
-      res.json(route.toJSON());
+      res.json(stop.toJSON());
     }
   });
 

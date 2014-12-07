@@ -11,19 +11,19 @@ var moment = require('moment');
 
 module.exports = function(sequelize, DataTypes) {
 
-	return sequelize.define("Route", {
+	return sequelize.define("Stop", {
 		agency_key: DataTypes.STRING,
-		route_id: DataTypes.STRING,
-		agency_id: DataTypes.STRING,
-		route_short_name: DataTypes.STRING,
-		route_long_name: DataTypes.STRING,
-		route_desc: DataTypes.STRING,
-		route_type: DataTypes.INTEGER,
-		route_url: DataTypes.STRING,
-		route_color: DataTypes.STRING,
-		route_text_color: DataTypes.STRING
+		stop_id: DataTypes.STRING,
+		stop_name: DataTypes.STRING,
+		stop_desc: DataTypes.STRING,
+		stop_lat: DataTypes.STRING,
+		stop_lon: DataTypes.STRING,
+		zone_id: DataTypes.INTEGER,
+		stop_url: DataTypes.STRING,
+		location_type: DataTypes.STRING,
+		parent_station: DataTypes.STRING
 	}, {
-		tableName: "routes",
+		tableName: "stops",
 		underscored: true,
 		instanceMethods: {
 			toJSON: function() {
@@ -42,5 +42,4 @@ module.exports = function(sequelize, DataTypes) {
 			updatedAt: function() { return moment(this.getDataValue('updatedAt')).format(); }
 		}
 	});
-
 };

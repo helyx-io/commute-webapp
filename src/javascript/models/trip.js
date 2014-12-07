@@ -11,19 +11,17 @@ var moment = require('moment');
 
 module.exports = function(sequelize, DataTypes) {
 
-	return sequelize.define("Route", {
+	return sequelize.define("Trip", {
 		agency_key: DataTypes.STRING,
 		route_id: DataTypes.STRING,
-		agency_id: DataTypes.STRING,
-		route_short_name: DataTypes.STRING,
-		route_long_name: DataTypes.STRING,
-		route_desc: DataTypes.STRING,
-		route_type: DataTypes.INTEGER,
-		route_url: DataTypes.STRING,
-		route_color: DataTypes.STRING,
-		route_text_color: DataTypes.STRING
+		service_id: DataTypes.STRING,
+		trip_id: DataTypes.STRING,
+		trip_headsign: DataTypes.STRING,
+		direction_id: DataTypes.STRING,
+		block_id: DataTypes.INTEGER,
+		shape_id: DataTypes.STRING
 	}, {
-		tableName: "routes",
+		tableName: "trips",
 		underscored: true,
 		instanceMethods: {
 			toJSON: function() {

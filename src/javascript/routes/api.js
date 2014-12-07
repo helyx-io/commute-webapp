@@ -13,6 +13,8 @@ var models = require('../models');
 
 var agencies = require('./agencies.js');
 var routes = require('./routes.js');
+var stops = require('./stops.js');
+var trips = require('./trips.js');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,8 @@ router.get('/', (req, res) => {
 
 router.use("/agencies", agencies);
 router.use("/routes", routes);
+router.use("/stops", stops);
+router.use("/trips", trips);
 
 
 ////////////////////////////////////////////////////////////////////////////////////
