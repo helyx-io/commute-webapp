@@ -27,9 +27,10 @@ module.exports = function(sequelize, DataTypes) {
 			toJSON: function() {
 				var obj = this.get({ plain: true });
 				var newObj = {};
-				var length = this.options.attributes.length;
+				var attributes = this.options.attributes || this.attributes;
+				var length = attributes.length;
 				for (var i = 0; i < length; i++) {
-					newObj[this.options.attributes[i]] = obj[this.options.attributes[i]];
+					newObj[attributes[i]] = obj[attributes[i]];
 				}
 
 				return newObj;

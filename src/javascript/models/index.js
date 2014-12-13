@@ -25,6 +25,7 @@ Object.keys(db).forEach(function(modelName) {
 });
 
 db.sequelize = sequelize;
-db.Sequelize = Sequelize;
+
+db.StopTime.belongsTo(db.Stop, {foreignKey: 'stop_id', constraints: false});
 
 module.exports = db;
