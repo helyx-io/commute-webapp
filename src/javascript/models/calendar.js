@@ -45,6 +45,9 @@ module.exports = function(sequelize, DataTypes) {
 					newObj[attributes[i]] = obj[attributes[i]];
 				}
 
+				newObj.start_date = moment(newObj.start_date).format('YYYY-MM-DD');
+				newObj.end_date = moment(newObj.end_date).format('YYYY-MM-DD');
+
 				return newObj;
 			}
 		},
