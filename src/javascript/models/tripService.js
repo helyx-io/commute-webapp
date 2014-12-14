@@ -11,7 +11,7 @@ var moment = require('moment');
 
 module.exports = function(sequelize, DataTypes) {
 
-	return sequelize.define("Trip", {
+	return sequelize.define("TripService", {
 		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
@@ -20,10 +20,12 @@ module.exports = function(sequelize, DataTypes) {
 		},
 		agency_key: DataTypes.STRING(45),
 		route_id: DataTypes.STRING(45),
-		service_id: DataTypes.INTEGER,
-		trip_id: {
-			type: DataTypes.STRING(45),
+		service_id:{
+			type: DataTypes.INTEGER,
 			primaryKey: true
+		},
+		trip_id: {
+			type: DataTypes.STRING(45)
 		},
 		trip_headsign: DataTypes.STRING(45),
 		direction_id: DataTypes.INTEGER,

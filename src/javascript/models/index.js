@@ -28,6 +28,7 @@ db.sequelize = sequelize;
 
 db.StopTime.belongsTo(db.Stop, {foreignKey: 'stop_id', constraints: false});
 db.Trip.belongsTo(db.Calendar, {foreignKey: 'service_id', constraints: false});
-db.Calendar.hasMany(db.CalendarDate, {foreignKey: 'service_id', constraints: false});
+db.TripService.hasOne(db.Calendar, {foreignKey: 'service_id', constraints: false});
+db.TripService.hasMany(db.CalendarDate, {foreignKey: 'service_id', constraints: false});
 
 module.exports = db;

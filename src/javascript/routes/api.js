@@ -19,6 +19,7 @@ var logger = require('../log/logger');
 var Agency = models.Agency;
 var Route = models.Route;
 var Trip = models.Trip;
+var TripService = models.TripService;
 var Stop = models.Stop;
 var StopTime = models.StopTime;
 var Calendar = models.Calendar;
@@ -248,23 +249,20 @@ router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthe
 	var agencyId = req.params.agencyId;
 	var serviceId = req.params.serviceId;
 
-	Calendar.find({where: {service_id: serviceId}, include: [ CalendarDate ]}).complete((err, calendar) => {
+	Calendar.find({where: {service_id: serviceId}}).complete((err, calendar) => {
 
 		if (err) {
 			res.json(500, {message: err.message});
 		}
 		else {
 			var jsonCalendar = calendar.toJSON();
-			var jsonCalendarDates = calendar.CalendarDates.map((calendarDate) => calendarDate.toJSON());
-
-			jsonCalendar.calendarDates = jsonCalendarDates;
 
 			jsonCalendar.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars`,
 				"rel": "http://gtfs.helyx.io/api/calendars",
 				"title": `Calendars`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${serviceId}/calendar-dates`,
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}`,
 				"rel": "http://gtfs.helyx.io/api/calendar-dates",
 				"title": `Calendar dates`
 			}];
@@ -276,7 +274,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthe
 });
 
 
-router.get('/agencies/:agencyId/calendars/:serviceId/calendar-dates', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/agencies/:agencyId/calendar-dates/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
 	var serviceId = req.params.serviceId;
@@ -295,7 +293,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId/calendar-dates', /*security
 					"rel": "http://gtfs.helyx.io/api/calendar",
 					"title": `Calendar '${serviceId}'`
 				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${serviceId}/calendar-dates/${moment(calendarDate.date).format('YYYY-MM-DD')}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}/${moment(calendarDate.date).format('YYYY-MM-DD')}`,
 					"rel": "http://gtfs.helyx.io/api/calendar-date",
 					"title": `Calendar date '${moment(calendarDate.date).format('YYYY-MM-DD')}'`
 				}];
@@ -309,7 +307,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId/calendar-dates', /*security
 });
 
 
-router.get('/agencies/:agencyId/calendars/:serviceId/calendar-dates/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/agencies/:agencyId/calendar-dates/:serviceId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
 	var serviceId = req.params.serviceId;
@@ -324,7 +322,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId/calendar-dates/:date', /*se
 			var jsonCalendarDate = calendarDate.toJSON();
 
 			jsonCalendarDate.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${serviceId}/calendar-dates`,
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}`,
 				"rel": "http://gtfs.helyx.io/api/calendar-dates",
 				"title": `Calendar dates`
 			}];
@@ -442,17 +440,40 @@ router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticate
 	var agencyId = req.params.agencyId;
 	var tripId = req.params.tripId;
 
-	Trip.find({ where:{ trip_id: tripId }, include: [ {model: Calendar, include: [CalendarDate]} ]}).complete((err, trip) => {
+	TripService.find({ where:{ trip_id: tripId }, include: [ Calendar, CalendarDate ]}).complete((err, trip) => {
 
 		if (err) {
 			res.json(500, { message: err.message });
 		}
 		else {
 			var jsonTrip = trip.toJSON();
-			var jsonCalendar = trip.Calendar.toJSON();
-			var jsonCalendarDates = trip.Calendar.CalendarDates.map((calendarDate) => calendarDate.toJSON());
-			jsonTrip.calendar = jsonCalendar;
-			jsonTrip.calendar.calendarDates = jsonCalendarDates;
+
+			if (trip.Calendar != undefined) {
+				var jsonCalendar = trip.Calendar.toJSON();
+
+				jsonCalendar.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
+					"rel": "http://gtfs.helyx.io/api/calendar",
+					"title": `Calendar '${jsonTrip.service_id}'`
+				}];
+
+				jsonTrip.calendar = jsonCalendar;
+			}
+
+			if (trip.CalendarDates != undefined) {
+				var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
+					var jsonCalendarDate = calendarDate.toJSON();
+
+					jsonCalendarDate.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
+						"rel": "http://gtfs.helyx.io/api/calendar-date",
+						"title": `Calendar date '${jsonTrip.service_id}'`
+					}];
+
+					return jsonCalendarDate;
+				});
+				jsonTrip.calendarDates = jsonCalendarDates;
+			}
 
 			jsonTrip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${trip.route_id}`,
@@ -462,10 +483,6 @@ router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticate
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips`,
 				"rel": "http://gtfs.helyx.io/api/trips",
 				"title": `Trips`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
-				"rel": "http://gtfs.helyx.io/api/calendar",
-				"title": `Calendar '${jsonTrip.service_id}'`
 			}];
 
 			res.json(jsonTrip);
