@@ -51,7 +51,7 @@ router.get('/agencies', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 	Agency.findAll({}).complete((err, agencies) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			agencies = agencies.map((agency) => {
@@ -79,7 +79,7 @@ router.get('/agencies/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res
 	Agency.find({where: {agency_id: agencyId}}).complete((err, agency) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			var jsonAgency = agency.toJSON();
@@ -124,7 +124,7 @@ router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (r
 	Route.findAll({where: {agency_id: agencyId}}).complete((err, routes) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			routes = routes.map((route) => {
@@ -157,7 +157,7 @@ router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthentica
 	Route.find({where: {agency_id: agencyId, route_id: routeId}}).complete((err, route) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			var jsonRoute = route.toJSON();
@@ -187,7 +187,7 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 	Trip.findAll({where: {route_id: routeId}}).complete((err, trips) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			trips = trips.map((trip) => {
@@ -219,7 +219,7 @@ router.get('/agencies/:agencyId/calendars', /*security.ensureJWTAuthenticated,*/
 	Calendar.findAll({where: {}}).complete((err, calendars) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			calendars = calendars.map((calendar) => {
@@ -252,7 +252,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthe
 	Calendar.find({where: {service_id: serviceId}}).complete((err, calendar) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			var jsonCalendar = calendar.toJSON();
@@ -282,7 +282,8 @@ router.get('/agencies/:agencyId/calendar-dates/:serviceId', /*security.ensureJWT
 	CalendarDate.findAll({where: { service_id: serviceId }}).complete((err, calendarDates) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+			res.status(500).json({message: err.message});
 		}
 		else {
 			calendarDates = calendarDates.map((calendarDate) => {
@@ -316,7 +317,7 @@ router.get('/agencies/:agencyId/calendar-dates/:serviceId/:date', /*security.ens
 	CalendarDate.find({where: {service_id: serviceId, date: date }}).complete((err, calendarDate) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			var jsonCalendarDate = calendarDate.toJSON();
@@ -342,7 +343,7 @@ router.get('/agencies/:agencyId/trips/:tripId/stop-times', /*security.ensureJWTA
 	StopTime.findAll({where: {trip_id: tripId}, limit: 1000, include: [ Stop ]}).complete((err, stopTimes) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			stopTimes = stopTimes.map((stopTime) => {
@@ -380,7 +381,7 @@ router.get('/agencies/:agencyId/stop-times/:stopId', /*security.ensureJWTAuthent
 	StopTime.find({where: {stop_id: stopId}, include: [ Stop ]}).complete((err, stopTime) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			var jsonStopTime = stopTime.toJSON();
@@ -406,15 +407,52 @@ router.get('/agencies/:agencyId/stop-times/:stopId', /*security.ensureJWTAuthent
 router.get('/agencies/:agencyId/trips', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var date = req.query.date;
 
-	Trip.findAll({ limit: 1000 }).complete((err, trips) => {
+	var calendarQuery = { model: Calendar };
+	if (date != undefined) {
+		calendarQuery.where = {
+			start_date : { lte: date },
+			end_date : { gte: date }
+		};
+	}
+	var calendarDateQuery = { model: CalendarDate };
+
+	TripService.findAll({ limit: 1000, include: [ calendarQuery, calendarDateQuery ] }).complete((err, trips) => {
 
 		if (err) {
-			res.json(500, { message: err.message });
+			res.status(500).json({ message: err.message });
 		}
 		else {
 			trips = trips.map((trip) => {
 				var jsonTrip = trip.toJSON();
+
+				if (trip.Calendar != undefined) {
+					var jsonCalendar = trip.Calendar.toJSON();
+
+					jsonCalendar.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
+						"rel": "http://gtfs.helyx.io/api/calendar",
+						"title": `Calendar '${jsonTrip.service_id}'`
+					}];
+
+					jsonTrip.calendar = jsonCalendar;
+				}
+
+				if (trip.CalendarDates != undefined) {
+					var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
+						var jsonCalendarDate = calendarDate.toJSON();
+
+						jsonCalendarDate.links = [{
+							"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
+							"rel": "http://gtfs.helyx.io/api/calendar-date",
+							"title": `Calendar date '${jsonTrip.service_id}'`
+						}];
+
+						return jsonCalendarDate;
+					});
+					jsonTrip.calendarDates = jsonCalendarDates;
+				}
 
 				jsonTrip.links = [{
 					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
@@ -443,7 +481,7 @@ router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticate
 	TripService.find({ where:{ trip_id: tripId }, include: [ Calendar, CalendarDate ]}).complete((err, trip) => {
 
 		if (err) {
-			res.json(500, { message: err.message });
+			res.status(500).json({ message: err.message });
 		}
 		else {
 			var jsonTrip = trip.toJSON();
@@ -499,7 +537,7 @@ router.get('/agencies/:agencyId/stops', /*security.ensureJWTAuthenticated,*/ (re
 	Stop.findAll({ limit: 1000 }).complete((err, stops) => {
 
 		if (err) {
-			res.json(500, { message: err.message });
+			res.status(500).json({ message: err.message });
 		}
 		else {
 			stops = stops.map((stop) => {
@@ -533,7 +571,7 @@ router.get('/agencies/:agencyId/stops/:stopId', /*security.ensureJWTAuthenticate
 	Stop.find({ where:{ stop_id: stopId } }).complete((err, stop) => {
 
 		if (err) {
-			res.json(500, { message: err.message });
+			res.status(500).json({ message: err.message });
 		}
 		else {
 			var jsonStop = stop.toJSON();
@@ -564,7 +602,7 @@ router.get('/agencies/:agencyId/stops/:stopId/stop-times', /*security.ensureJWTA
 	StopTime.findAll({where: {stop_id: stopId}, limit: 1000, include: [ Stop ]}).complete((err, stopTimes) => {
 
 		if (err) {
-			res.json(500, {message: err.message});
+			res.status(500).json({message: err.message});
 		}
 		else {
 			stopTimes = stopTimes.map((stopTime) => {

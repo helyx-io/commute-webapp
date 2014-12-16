@@ -12,12 +12,15 @@ var moment = require('moment');
 module.exports = function(sequelize, DataTypes) {
 
 	return sequelize.define("Agency", {
-		agency_key: DataTypes.STRING,
-		agency_id: DataTypes.STRING,
-		agency_name: DataTypes.STRING,
-		agency_url: DataTypes.STRING,
-		agency_timezone: DataTypes.STRING,
-		agency_lang: DataTypes.STRING
+		agency_key: DataTypes.STRING(45),
+		agency_id: {
+			type: DataTypes.STRING(45),
+			primaryKey: true
+		},
+		agency_name: DataTypes.STRING(45),
+		agency_url: DataTypes.STRING(45),
+		agency_timezone: DataTypes.STRING(45),
+		agency_lang: DataTypes.STRING(45)
 	}, {
 		tableName: "agencies",
 		underscored: true,

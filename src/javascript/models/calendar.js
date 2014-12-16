@@ -12,12 +12,6 @@ var moment = require('moment');
 module.exports = function(sequelize, DataTypes) {
 
 	return sequelize.define("Calendar", {
-		id: {
-			type: DataTypes.INTEGER,
-			autoIncrement: true,
-			unique: true,
-			allowNull: false
-		},
 		agency_key: DataTypes.STRING(45),
 		service_id: {
 			type: DataTypes.INTEGER,
