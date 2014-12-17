@@ -16,6 +16,8 @@ var models = require('../models');
 
 var logger = require('../log/logger');
 
+var _ = require('lodash');
+
 var Agency = models.Agency;
 var Route = models.Route;
 var Trip = models.Trip;
@@ -25,6 +27,19 @@ var StopTime = models.StopTime;
 var Calendar = models.Calendar;
 var CalendarDate = models.CalendarDate;
 
+var daysOfWeek = {
+	1: "Monday",
+	2: "Tuesday",
+	3: "Wednesday",
+	4: "Thursday",
+	5: "Friday",
+	6: "Saturday",
+	7: "Sunday"
+};
+
+function dayOfWeekAsString(day) {
+	return daysOfWeek[day];
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -183,30 +198,82 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 
 	var agencyId = req.params.agencyId;
 	var routeId = req.params.routeId;
+	var date = req.query.date;
 
-	Trip.findAll({where: {route_id: routeId}}).complete((err, trips) => {
+	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
 
-		if (err) {
-			res.status(500).json({message: err.message});
-		}
-		else {
-			trips = trips.map((trip) => {
-				var jsonTrip = trip.toJSON();
+	var calendarQuery = { model: Calendar };
+	var calendarDateQuery = { model: CalendarDate };
 
-				jsonTrip.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,
-					"rel": "http://gtfs.helyx.io/api/route",
-					"title": `Route '${routeId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
-					"rel": "http://gtfs.helyx.io/api/trip",
-					"title": `Trip '${trip.trip_id}'`
-				}];
+	if (date != undefined) {
+		calendarQuery.where = {
+			start_date : { lte: date },
+			end_date : { gte: date }
+		};
+		calendarQuery.where[dayOfWeek] = 1;
 
-				return jsonTrip;
+//		calendarDateQuery.where = { date: date, exception_type: 1 };
+	}
+
+
+	TripService.findAll({where: {route_id: routeId}, include: [calendarQuery]}).complete((err, calendarTrips) => {
+		TripService.findAll({where: {route_id: routeId}, include: [calendarDateQuery]}).complete((err, calendarDateTrips) => {
+
+			var trips = calendarTrips.map((calendarTrip) => {
+				var calendarDateTrip = calendarDateTrips.find((calendarDateTrip) => calendarTrip.trip_id == calendarDateTrip.trip_id) || {};
+				calendarTrip.CalendarDates = calendarDateTrip.CalendarDates || [];
+				return calendarTrip;
 			});
-			res.json(trips);
-		}
+
+			if (err) {
+				res.status(500).json({message: err.message});
+			}
+			else {
+				trips = trips.map((trip) => {
+					var jsonTrip = trip.toJSON();
+
+					if (trip.Calendar != undefined) {
+						var jsonCalendar = trip.Calendar.toJSON();
+
+						jsonCalendar.links = [{
+							"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
+							"rel": "http://gtfs.helyx.io/api/calendar",
+							"title": `Calendar '${jsonTrip.service_id}'`
+						}];
+
+						jsonTrip.calendar = jsonCalendar;
+					}
+
+					if (trip.CalendarDates != undefined) {
+						var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
+							var jsonCalendarDate = calendarDate.toJSON();
+
+							jsonCalendarDate.links = [{
+								"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
+								"rel": "http://gtfs.helyx.io/api/calendar-date",
+								"title": `Calendar date '${jsonTrip.service_id}'`
+							}];
+
+							return jsonCalendarDate;
+						});
+						jsonTrip.calendarDates = jsonCalendarDates;
+					}
+
+					jsonTrip.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,
+						"rel": "http://gtfs.helyx.io/api/route",
+						"title": `Route '${routeId}'`
+					}, {
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
+						"rel": "http://gtfs.helyx.io/api/trip",
+						"title": `Trip '${trip.trip_id}'`
+					}];
+
+					return jsonTrip;
+				});
+				res.json(trips);
+			}
+		});
 	});
 
 });
@@ -408,15 +475,21 @@ router.get('/agencies/:agencyId/trips', /*security.ensureJWTAuthenticated,*/ (re
 
 	var agencyId = req.params.agencyId;
 	var date = req.query.date;
+	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
 
 	var calendarQuery = { model: Calendar };
+	var calendarDateQuery = { model: CalendarDate };
+
 	if (date != undefined) {
 		calendarQuery.where = {
 			start_date : { lte: date },
 			end_date : { gte: date }
 		};
+		calendarQuery.where[dayOfWeek] = 1;
+
+//		calendarDateQuery.where = { date: date, exception_type: 1 };
 	}
-	var calendarDateQuery = { model: CalendarDate };
+
 
 	TripService.findAll({ limit: 1000, include: [ calendarQuery, calendarDateQuery ] }).complete((err, trips) => {
 
