@@ -70,7 +70,8 @@ CREATE TABLE `calendar_dates` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`service_id`,`date`),
-  KEY `service_id_idx` (`service_id`)
+  KEY `service_id_idx` (`service_id`),
+  KEY `date_idx` (`date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -96,7 +97,16 @@ CREATE TABLE `calendars` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`service_id`),
-  KEY `service_id_dix` (`service_id`)
+  KEY `service_id_idx` (`service_id`),
+  KEY `start_date_idx` (`start_date`),
+  KEY `end_date_idx` (`end_date`),
+  KEY `monday_idx` (`monday`),
+  KEY `tuesday_idx` (`tuesday`),
+  KEY `wednesday_idx` (`wednesday`),
+  KEY `thursday_idx` (`thursday`),
+  KEY `friday_idx` (`friday`),
+  KEY `saturday_idx` (`saturday`),
+  KEY `sunday_idx` (`sunday`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -188,7 +198,9 @@ CREATE TABLE `stop_times` (
   `drop_off_type` int(11) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  PRIMARY KEY (`id`),
+  KEY `stop_id_idx` (`stop_id`),
+  KEY `trip_id_idx` (`trip_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=11387210 DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -297,4 +309,4 @@ CREATE TABLE `users` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-12-16 23:49:08
+-- Dump completed on 2014-12-18  0:04:20
