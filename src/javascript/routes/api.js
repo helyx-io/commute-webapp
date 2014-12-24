@@ -4,6 +4,8 @@
 
 var fs = require('fs');
 
+var Promise = require('bluebird');
+
 var express = require('express');
 var passport = require('passport');
 
@@ -20,7 +22,7 @@ var logger = require('../log/logger');
 
 var _ = require('lodash');
 
-var db = require('../lib/db');
+var DB = require('../lib/db');
 
 var Agency = models.Agency;
 var Route = models.Route;
@@ -40,6 +42,7 @@ var daysOfWeek = {
 	6: "Saturday",
 	7: "Sunday"
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -85,8 +88,13 @@ router.get('/', (req, res) => {
 
 router.get('/agencies', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-	db('agencies').then((agencies) => {
-		var agencies = agencies.map((agency) => {
+	var db = DB.schema('gtfs');
+
+	db.Agencies.query( (q) => q ).fetch().then((agencies) => {
+
+		agencies = agencies.toJSON();
+
+		agencies.forEach((agency) => {
 
 			agency.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}`,
@@ -114,12 +122,13 @@ router.get('/agencies', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 				"title": `Calendar dates`
 			}];
 
-			return agency;
 		});
 
 		res.json(format(agencies));
+
 	}).catch((err) => {
-			res.status(500).json({message: err.message});
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -128,14 +137,15 @@ router.get('/agencies', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 router.get('/agencies/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema('gtfs');
 
-	db('agencies').where({ agency_id: agencyId }).then((agencies) => {
+	new db.Agency({ agency_id: agencyId }).fetch().then((agency) => {
 
-		if (agencies.length == 0) {
+		if (!agency) {
 			res.status(404).end();
 		}
 		else {
-			var agency = agencies[0];
+			var agency = agency.toJSON();
 
 			agency.links = [{
 				"href": `${baseApiURL(req)}/agencies`,
@@ -167,6 +177,7 @@ router.get('/agencies/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res
 		}
 
 	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
 	});
 
@@ -176,10 +187,20 @@ router.get('/agencies/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res
 router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
 
-	db('routes').where({agency_id: agencyId}).then((routes) => {
+	var routeShortname = req.query.routeShortName;
 
-		routes = routes.map((route) => {
+	var query = { agency_id: agencyId};
+
+	if (routeShortname) {
+		query.route_short_name = routeShortname;
+	}
+
+	db.Routes.query( (q) => q.where(query) ).fetch().then((routes) => {
+		routes = routes.toJSON();
+
+		routes.forEach((route) => {
 
 			route.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
@@ -191,12 +212,39 @@ router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (r
 				"title": `Route '${route.route_id}'`
 			}];
 
-			return route;
 		});
 
-		res.json(format(routes));
+		return Promise.all(routes.map((route) => {
 
+			return new db.Trip({route_id: route.route_id}).fetch()
+				.then((trip) => {
+					return db.StopTimes
+						.query( (q) => q.where({trip_id: trip.id}).orderBy('stop_sequence', 'asc') )
+						.fetch({ withRelated: ['stop'] });
+				})
+				.then((stopTimes) => {
+					route.first_stop = stopTimes.models[0].related('stop').toJSON();
+					route.first_stop.links = [{
+						"href": (baseApiURL(req) + "/agencies/" + agencyId + "/stops/" + route.first_stop.stop_id),
+						"rel": "http://gtfs.helyx.io/api/stop",
+						"title": ("Stop '" + route.first_stop.stop_id + "'")
+					}];
+
+					route.last_stop = stopTimes.models[stopTimes.length - 1].related('stop').toJSON();
+					route.last_stop.links = [{
+						"href": (baseApiURL(req) + "/agencies/" + agencyId + "/stops/" + route.last_stop.stop_id),
+						"rel": "http://gtfs.helyx.io/api/stop",
+						"title": ("Stop '" + route.last_stop.stop_id + "'")
+					}];
+
+					return route;
+				});
+		}));
+	})
+	.then((routes)=> {
+		res.json(format(routes));
 	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
 	});
 
@@ -206,15 +254,17 @@ router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (r
 router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var routeId = req.params.routeId;
 
-	db('routes').where({agency_id: agencyId, route_id: routeId}).then((routes) => {
+	new db.Route({agency_id: agencyId, route_id: routeId}).fetch().then((route) => {
 
-		if (routes.length == 0) {
+		if (!route) {
 			res.status(404).end();
 		}
 		else {
-			var route = routes[0];
+			var route = route.toJSON();
 
 			route.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes`,
@@ -226,10 +276,11 @@ router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthentica
 				"title": `Trips`
 			}];
 
-			res.json(route);
+			res.json(format(route));
 		}
 
 	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
 	});
 
@@ -239,6 +290,8 @@ router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthentica
 router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var routeId = req.params.routeId;
 	var date = req.query.date;
 
@@ -254,68 +307,55 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 		};
 		calendarQuery.where[dayOfWeek] = 1;
 
-//		calendarDateQuery.where = { date: date, exception_type: 1 };
+		calendarDateQuery.where = { date: date, exception_type: 1 };
 	}
 
 
-	TripService.findAll({where: {route_id: routeId}, include: [calendarQuery]}).complete((err, calendarTrips) => {
-		TripService.findAll({where: {route_id: routeId}, include: [calendarDateQuery]}).complete((err, calendarDateTrips) => {
+	db.TripServices.query( (q) => q.where({route_id: routeId}) ).fetch({ withRelated: [ 'calendar' ]}).then((trips) => {
 
-			var trips = calendarTrips.map((calendarTrip) => {
-				var calendarDateTrip = calendarDateTrips.find((calendarDateTrip) => calendarTrip.trip_id == calendarDateTrip.trip_id) || {};
-				calendarTrip.CalendarDates = calendarDateTrip.CalendarDates || [];
-				return calendarTrip;
-			});
+		trips = trips.toJSON();
 
-			if (err) {
-				res.status(500).json({message: err.message});
+		trips.forEach((trip) => {
+
+			if (trip.calendar != undefined) {
+
+				trip.calendar.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
+					"rel": "http://gtfs.helyx.io/api/calendar",
+					"title": `Calendar '${trip.service_id}'`
+				}];
 			}
-			else {
-				trips = trips.map((trip) => {
-					var jsonTrip = trip.toJSON();
 
-					if (trip.Calendar != undefined) {
-						var jsonCalendar = trip.Calendar.toJSON();
+			if (trip.calendarDates != undefined) {
+				trip.calendarDates.forEach((calendarDate) => {
 
-						jsonCalendar.links = [{
-							"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
-							"rel": "http://gtfs.helyx.io/api/calendar",
-							"title": `Calendar '${jsonTrip.service_id}'`
-						}];
-
-						jsonTrip.calendar = jsonCalendar;
-					}
-
-					if (trip.CalendarDates != undefined) {
-						var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
-							var jsonCalendarDate = calendarDate.toJSON();
-
-							jsonCalendarDate.links = [{
-								"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
-								"rel": "http://gtfs.helyx.io/api/calendar-date",
-								"title": `Calendar date '${jsonTrip.service_id}'`
-							}];
-
-							return jsonCalendarDate;
-						});
-						jsonTrip.calendarDates = jsonCalendarDates;
-					}
-
-					jsonTrip.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,
-						"rel": "http://gtfs.helyx.io/api/route",
-						"title": `Route '${routeId}'`
-					}, {
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
-						"rel": "http://gtfs.helyx.io/api/trip",
-						"title": `Trip '${trip.trip_id}'`
+					calendarDate.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
+						"rel": "http://gtfs.helyx.io/api/calendar-date",
+						"title": `Calendar date '${trip.service_id}'`
 					}];
 
-					return jsonTrip;
 				});
-				res.json(trips);
 			}
+
+			trip.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,
+				"rel": "http://gtfs.helyx.io/api/route",
+				"title": `Route '${routeId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
+				"rel": "http://gtfs.helyx.io/api/trip",
+				"title": `Trip '${trip.trip_id}'`
+			}];
+
+			return trip;
 		});
+
+		res.json(format(trips));
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -324,10 +364,14 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 router.get('/agencies/:agencyId/calendars', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
 
-	db('calendars').then((calendars) => {
+	db.Calendars.query( (q) => q ).fetch().then((calendars) => {
 
-		calendars = calendars.map((calendar) => {
+		calendars = calendars.toJSON();
+
+		calendars.forEach((calendar) => {
+
 			calendar.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
 				"rel": "http://gtfs.helyx.io/api/agency",
@@ -338,11 +382,12 @@ router.get('/agencies/:agencyId/calendars', /*security.ensureJWTAuthenticated,*/
 				"title": `Calendar '${calendar.service_id}'`
 			}];
 
-			return calendar;
 		});
+
 		res.json(format(calendars));
 
 	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
 	});
 
@@ -352,16 +397,17 @@ router.get('/agencies/:agencyId/calendars', /*security.ensureJWTAuthenticated,*/
 router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var serviceId = req.params.serviceId;
 
-	db('calendars').where({service_id: serviceId}).then((calendars) => {
+	new db.Calendar({service_id: serviceId}).fetch().then((calendar) => {
 
-
-		if (calendars.length == 0) {
+		if (!calendar) {
 			res.status(404).end();
 		}
 		else {
-			var calendar = calendars[0];
+			var calendar = calendar.toJSON();
 
 			calendar.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars`,
@@ -377,6 +423,7 @@ router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthe
 		}
 
 	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
 	});
 
@@ -386,32 +433,33 @@ router.get('/agencies/:agencyId/calendars/:serviceId', /*security.ensureJWTAuthe
 router.get('/agencies/:agencyId/calendar-dates/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var serviceId = req.params.serviceId;
 
-	CalendarDate.findAll({where: { service_id: serviceId }}).complete((err, calendarDates) => {
+	db.CalendarDates.query((q) => q.where({ service_id: serviceId })).fetch().then((calendarDates) => {
 
-		if (err) {
-			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-			res.status(500).json({message: err.message});
-		}
-		else {
-			calendarDates = calendarDates.map((calendarDate) => {
-				var jsonCalendar = calendarDate.toJSON();
+		calendarDates = calendarDates.toJSON();
 
-				jsonCalendar.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${serviceId}`,
-					"rel": "http://gtfs.helyx.io/api/calendar",
-					"title": `Calendar '${serviceId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}/${moment(calendarDate.date).format('YYYY-MM-DD')}`,
-					"rel": "http://gtfs.helyx.io/api/calendar-date",
-					"title": `Calendar date '${moment(calendarDate.date).format('YYYY-MM-DD')}'`
-				}];
+		calendarDates.forEach((calendarDate) => {
 
-				return jsonCalendar;
-			});
-			res.json(calendarDates);
-		}
+			calendarDate.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${serviceId}`,
+				"rel": "http://gtfs.helyx.io/api/calendar",
+				"title": `Calendar '${serviceId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}/${moment(calendarDate.date).format('YYYY-MM-DD')}`,
+				"rel": "http://gtfs.helyx.io/api/calendar-date",
+				"title": `Calendar date '${moment(calendarDate.date).format('YYYY-MM-DD')}'`
+			}];
+
+		});
+
+		res.json(format(calendarDates));
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -420,25 +468,31 @@ router.get('/agencies/:agencyId/calendar-dates/:serviceId', /*security.ensureJWT
 router.get('/agencies/:agencyId/calendar-dates/:serviceId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var serviceId = req.params.serviceId;
 	var date = req.params.date;
 
-	CalendarDate.find({where: {service_id: serviceId, date: date }}).complete((err, calendarDate) => {
+	new db.CalendarDate({service_id: serviceId, date: date }).fetch().then((calendarDate) => {
 
-		if (err) {
-			res.status(500).json({message: err.message});
+		if (!calendarDate) {
+			res.status(404).end();
 		}
 		else {
-			var jsonCalendarDate = calendarDate.toJSON();
+			var calendarDate = calendarDate.toJSON();
 
-			jsonCalendarDate.links = [{
+			calendarDate.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}`,
 				"rel": "http://gtfs.helyx.io/api/calendar-dates",
 				"title": `Calendar dates`
 			}];
 
-			res.json(jsonCalendarDate);
+			res.json(format(calendarDate));
 		}
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -447,36 +501,43 @@ router.get('/agencies/:agencyId/calendar-dates/:serviceId/:date', /*security.ens
 router.get('/agencies/:agencyId/trips/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var tripId = req.params.tripId;
 
-	StopTime.findAll({where: {trip_id: tripId}, limit: 1000, include: [ Stop ]}).complete((err, stopTimes) => {
+	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
 
-		if (err) {
-			res.status(500).json({message: err.message});
-		}
-		else {
-			stopTimes = stopTimes.map((stopTime) => {
-				var jsonStopTime = stopTime.toJSON();
-				var jsonStop = stopTime.Stop.toJSON();
-				jsonStopTime.stop = jsonStop;
-				jsonStopTime.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
-					"rel": "http://gtfs.helyx.io/api/trip",
-					"title": `Trip '${tripId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop-time",
-					"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.Stop.stop_name}' - Departure time: '${stopTime.Stop.departure_time}']`
-				}, {
+		stopTimes = stopTimes.toJSON();
+
+		stopTimes.forEach((stopTime) => {
+
+			stopTime.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
+				"rel": "http://gtfs.helyx.io/api/trip",
+				"title": `Trip '${tripId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
+				"rel": "http://gtfs.helyx.io/api/stop-time",
+				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
+			}];
+
+			if (stopTime.stop) {
+
+				stop.links = [{
 					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stopTime.stop_id}'`
 				}];
 
-				return jsonStopTime;
-			});
-			res.json(stopTimes);
-		}
+			}
+
+		});
+
+		res.json(format(stopTimes));
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -485,29 +546,39 @@ router.get('/agencies/:agencyId/trips/:tripId/stop-times', /*security.ensureJWTA
 router.get('/agencies/:agencyId/stop-times/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var stopId = req.params.stopId;
 
-	StopTime.find({where: {stop_id: stopId}, include: [ Stop ]}).complete((err, stopTime) => {
+	new db.StopTime({ stop_id: stopId }).fetch({ withRelated: ['stop'] }).then((stopTime) => {
 
-		if (err) {
-			res.status(500).json({message: err.message});
+		if (!stopTime) {
+			res.status(404).end();
 		}
 		else {
-			var jsonStopTime = stopTime.toJSON();
-			var jsonStop = stopTime.Stop.toJSON();
-			jsonStopTime.stop = jsonStop;
-			jsonStopTime.links = [{
+			var stopTime = stopTime.toJSON();
+
+			stopTime.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${stopTime.trip_id}`,
 				"rel": "http://gtfs.helyx.io/api/trip",
 				"title": `Trip '${stopTime.trip_id}'`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
-				"rel": "http://gtfs.helyx.io/api/stop",
-				"title": `Stop '${stopTime.stop_id}'`
 			}];
 
-			res.json(jsonStopTime);
+			if (stopTime.stop) {
+
+				stop.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+					"rel": "http://gtfs.helyx.io/api/stop",
+					"title": `Stop '${stopTime.stop_id}'`
+				}];
+
+			}
+
+			res.json(format(stopTime));
 		}
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -516,6 +587,8 @@ router.get('/agencies/:agencyId/stop-times/:stopId', /*security.ensureJWTAuthent
 router.get('/agencies/:agencyId/trips', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var date = req.query.date;
 	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
 
@@ -529,60 +602,57 @@ router.get('/agencies/:agencyId/trips', /*security.ensureJWTAuthenticated,*/ (re
 		};
 		calendarQuery.where[dayOfWeek] = 1;
 
-//		calendarDateQuery.where = { date: date, exception_type: 1 };
+		calendarDateQuery.where = { date: date, exception_type: 1 };
 	}
 
 
-	TripService.findAll({ limit: 1000, include: [ calendarQuery, calendarDateQuery ] }).complete((err, trips) => {
+	db.TripServices.query( (q) => q ).fetch({ withRelated: ['calendar'] }).then((trips) => {
 
-		if (err) {
-			res.status(500).json({ message: err.message });
-		}
-		else {
-			trips = trips.map((trip) => {
-				var jsonTrip = trip.toJSON();
+		trips = trips.toJSON();
 
-				if (trip.Calendar != undefined) {
-					var jsonCalendar = trip.Calendar.toJSON();
+		trips.forEach((trip) => {
 
-					jsonCalendar.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
-						"rel": "http://gtfs.helyx.io/api/calendar",
-						"title": `Calendar '${jsonTrip.service_id}'`
-					}];
+			if (trip.calendar != undefined) {
 
-					jsonTrip.calendar = jsonCalendar;
-				}
-
-				if (trip.CalendarDates != undefined) {
-					var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
-						var jsonCalendarDate = calendarDate.toJSON();
-
-						jsonCalendarDate.links = [{
-							"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
-							"rel": "http://gtfs.helyx.io/api/calendar-date",
-							"title": `Calendar date '${jsonTrip.service_id}'`
-						}];
-
-						return jsonCalendarDate;
-					});
-					jsonTrip.calendarDates = jsonCalendarDates;
-				}
-
-				jsonTrip.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
-					"rel": "http://gtfs.helyx.io/api/agency",
-					"title": `Agency '${agencyId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${jsonTrip.trip_id}`,
-					"rel": "http://gtfs.helyx.io/api/trip",
-					"title": `Trip '${jsonTrip.trip_id}'`
+				trip.calendar.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
+					"rel": "http://gtfs.helyx.io/api/calendar",
+					"title": `Calendar '${trip.service_id}'`
 				}];
 
-				return jsonTrip;
-			});
-			res.json(trips);
-		}
+				trip.calendar  = format(trip.calendar);
+			}
+
+			if (trip.calendarDates != undefined) {
+				trip.calendarDates.forEach((calendarDate) => {
+
+					calendarDate.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
+						"rel": "http://gtfs.helyx.io/api/calendar-date",
+						"title": `Calendar date '${trip.service_id}'`
+					}];
+
+				});
+				trip.calendarDates = format(trip.calendarDates);
+			}
+
+			trip.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+				"rel": "http://gtfs.helyx.io/api/agency",
+				"title": `Agency '${agencyId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
+				"rel": "http://gtfs.helyx.io/api/trip",
+				"title": `Trip '${trip.trip_id}'`
+			}];
+
+		});
+
+		res.json(trips);
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -591,44 +661,42 @@ router.get('/agencies/:agencyId/trips', /*security.ensureJWTAuthenticated,*/ (re
 router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var tripId = req.params.tripId;
 
-	TripService.find({ where:{ trip_id: tripId }, include: [ Calendar, CalendarDate ]}).complete((err, trip) => {
+	new db.TripService({ trip_id: tripId }).fetch({ withRelated: [ 'calendar' ]}).then((trip) => {
 
-		if (err) {
-			res.status(500).json({ message: err.message });
+		if (!trip) {
+			res.status(404).end();
 		}
 		else {
-			var jsonTrip = trip.toJSON();
+			trip = trip.toJSON();
 
-			if (trip.Calendar != undefined) {
-				var jsonCalendar = trip.Calendar.toJSON();
+			if (trip.calendar != undefined) {
 
-				jsonCalendar.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${jsonTrip.service_id}`,
+				trip.calendar.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
 					"rel": "http://gtfs.helyx.io/api/calendar",
-					"title": `Calendar '${jsonTrip.service_id}'`
+					"title": `Calendar '${trip.service_id}'`
 				}];
 
-				jsonTrip.calendar = jsonCalendar;
+				trip.calendar = format(trip.calendar);
 			}
 
-			if (trip.CalendarDates != undefined) {
-				var jsonCalendarDates = trip.CalendarDates.map((calendarDate) => {
-					var jsonCalendarDate = calendarDate.toJSON();
+			if (trip.calendarDates != undefined) {
+				trip.calendarDates.forEach((calendarDate) => {
 
-					jsonCalendarDate.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${jsonTrip.service_id}`,
+					calendarDate.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
 						"rel": "http://gtfs.helyx.io/api/calendar-date",
-						"title": `Calendar date '${jsonTrip.service_id}'`
+						"title": `Calendar date '${trip.service_id}'`
 					}];
 
-					return jsonCalendarDate;
 				});
-				jsonTrip.calendarDates = jsonCalendarDates;
 			}
 
-			jsonTrip.links = [{
+			trip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${trip.route_id}`,
 				"rel": "http://gtfs.helyx.io/api/route",
 				"title": `Route '${trip.route_id}'`
@@ -638,8 +706,11 @@ router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticate
 				"title": `Trips`
 			}];
 
-			res.json(jsonTrip);
+			res.json(format(trip));
 		}
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -648,31 +719,29 @@ router.get('/agencies/:agencyId/trips/:tripId', /*security.ensureJWTAuthenticate
 router.get('/agencies/:agencyId/stops', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
 
-	Stop.findAll({ limit: 1000 }).complete((err, stops) => {
+	db.Stops.query( (q) => q.limit(1000) ).fetch().then((stops) => {
 
-		if (err) {
-			res.status(500).json({ message: err.message });
-		}
-		else {
-			stops = stops.map((stop) => {
-				var jsonStop = stop.toJSON();
+		stops.forEach((stop) => {
 
-				jsonStop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
-					"rel": "http://gtfs.helyx.io/api/agency",
-					"title": `Agency '${agencyId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${jsonStop.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop",
-					"title": `Stop '${jsonStop.stop_id}'`
-				}];
+			stop.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+				"rel": "http://gtfs.helyx.io/api/agency",
+				"title": `Agency '${agencyId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+				"rel": "http://gtfs.helyx.io/api/stop",
+				"title": `Stop '${stop.stop_id}'`
+			}];
 
-				return jsonStop;
-			});
+		});
 
-			res.json(stops);
-		}
+		res.json(format(stops));
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -681,17 +750,20 @@ router.get('/agencies/:agencyId/stops', /*security.ensureJWTAuthenticated,*/ (re
 router.get('/agencies/:agencyId/stops/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var stopId = req.params.stopId;
 
-	Stop.find({ where:{ stop_id: stopId } }).complete((err, stop) => {
+	new db.Stop({ stop_id: stopId }).fetch().then((stop) => {
 
-		if (err) {
-			res.status(500).json({ message: err.message });
+		if (!stop) {
+			res.status(404).end();
 		}
 		else {
-			var jsonStop = stop.toJSON();
 
-			jsonStop.links = [{
+			stop = stop.toJSON();
+
+			stop.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops`,
 				"rel": "http://gtfs.helyx.io/api/stops",
 				"title": `Stops`
@@ -701,8 +773,12 @@ router.get('/agencies/:agencyId/stops/:stopId', /*security.ensureJWTAuthenticate
 				"title": `Stop times`
 			}];
 
-			res.json(jsonStop);
+			res.json(format(stop));
 		}
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });
@@ -711,33 +787,40 @@ router.get('/agencies/:agencyId/stops/:stopId', /*security.ensureJWTAuthenticate
 router.get('/agencies/:agencyId/stops/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
 	var stopId = req.params.stopId;
 //	var date = moment(req.params.date, 'YYYYMMDD');
 
-	StopTime.findAll({where: {stop_id: stopId}, limit: 1000, include: [ Stop ]}).complete((err, stopTimes) => {
+	db.StopTimes.query( (q) => q.where({ stop_id: stopId }).limit(1000) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
 
-		if (err) {
-			res.status(500).json({message: err.message});
-		}
-		else {
-			stopTimes = stopTimes.map((stopTime) => {
-				var jsonStopTime = stopTime.toJSON();
-				var jsonStop = stopTime.Stop.toJSON();
-				jsonStopTime.stop = jsonStop;
-				jsonStopTime.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop-time",
-					"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.Stop.stop_name}' - Departure time: '${stopTime.Stop.departure_time}']`
-				}, {
+		stopTimes = stopTimes.toJSON();
+
+		stopTimes.forEach((stopTime) => {
+
+			stopTime.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
+				"rel": "http://gtfs.helyx.io/api/stop-time",
+				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.Stop.stop_name}' - Departure time: '${stopTime.Stop.departure_time}']`
+			}];
+
+			if (stopTime.stop) {
+
+				stop.links = [{
 					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stopTime.stop_id}'`
 				}];
 
-				return jsonStopTime;
-			});
-			res.json(stopTimes);
-		}
+			}
+
+		});
+
+		res.json(format(stopTimes));
+
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
 	});
 
 });

@@ -21,6 +21,7 @@ var pemClients = require('./routes/pemClients');
 var authMiddleware = require('./middlewares/authMiddleware');
 var authService = require('./service/authService');
 
+var allowCrossDomain = require('./lib/allowCrossDomain');
 var requestLogger = require('./lib/requestLogger');
 
 
@@ -74,7 +75,8 @@ app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-//app.use(requestLogger());
+app.use(allowCrossDomain());
+app.use(requestLogger());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({

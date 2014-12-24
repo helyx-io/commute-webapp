@@ -45,7 +45,6 @@ module.exports = {
 			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
-	sequelize: db[env],
 	db: db[env],
 	monitoring: {
 		newrelic: {

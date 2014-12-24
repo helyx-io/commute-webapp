@@ -37,10 +37,8 @@ app.use((req, res, next) => {
 // HTTP Server Initialization
 ////////////////////////////////////////////////////////////////////////////////////
 
-models.sequelize.sync().success(function () {
-  var server = app.listen(app.get('port'), function() {
-    logger.debug('Express server listening on port ' + server.address().port);
-  });
+var server = app.listen(app.get('port'), function() {
+  logger.debug('Express server listening on port ' + server.address().port);
 });
 
 
