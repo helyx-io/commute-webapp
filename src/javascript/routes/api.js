@@ -4,6 +4,8 @@
 
 var fs = require('fs');
 
+var qs = require('querystring');
+
 var Promise = require('bluebird');
 
 var express = require('express');
@@ -24,15 +26,6 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
-var Agency = models.Agency;
-var Route = models.Route;
-var Trip = models.Trip;
-var TripService = models.TripService;
-var Stop = models.Stop;
-var StopTime = models.StopTime;
-var Calendar = models.Calendar;
-var CalendarDate = models.CalendarDate;
-
 var daysOfWeek = {
 	1: "Monday",
 	2: "Tuesday",
@@ -43,6 +36,22 @@ var daysOfWeek = {
 	7: "Sunday"
 };
 
+var redisClient = require('redis').createClient();
+var Cacher = require("cacher");
+var CacherRedis = require('cacher-redis');
+var cacher = new Cacher(new CacherRedis(redisClient));
+cacher.on("hit", (key) => {
+	logger.info(`+++ Cache hit for key: ${key}`);
+});
+cacher.on("miss", (key) => {
+	logger.info(`--- Cache miss for key: ${key}`);
+});
+cacher.on("error", (err) => {
+	logger.info(`!!! Cache error for key: ${key}`);
+});
+
+var Cache = require("../lib/cache");
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -50,6 +59,22 @@ var daysOfWeek = {
 
 var baseApiURL = (req) => {
 	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+};
+
+var withLinks = (req) => {
+	return req.query.links == 1
+};
+
+var withDesc = (req) => {
+	return !(req.query.desc == 0)
+};
+
+var withTimestamps = (req) => {
+	return req.query.timestamps == 1
+};
+
+var withLocations = (req) => {
+	return req.query.locations == 1
 };
 
 var dayOfWeekAsString = (day) => {
@@ -723,22 +748,128 @@ router.get('/agencies/:agencyId/stops', /*security.ensureJWTAuthenticated,*/ (re
 
 	db.Stops.query( (q) => q.limit(1000) ).fetch().then((stops) => {
 
-		stops.forEach((stop) => {
-
-			stop.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
-				"rel": "http://gtfs.helyx.io/api/agency",
-				"title": `Agency '${agencyId}'`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
-				"rel": "http://gtfs.helyx.io/api/stop",
-				"title": `Stop '${stop.stop_id}'`
-			}];
-
-		});
+		if (withLinks(req)) {
+			stops.forEach((stop) => {
+				stop.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+					"rel": "http://gtfs.helyx.io/api/agency",
+					"title": `Agency '${agencyId}'`
+				}, {
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+					"rel": "http://gtfs.helyx.io/api/stop",
+					"title": `Stop '${stop.stop_id}'`
+				}];
+			});
+		}
 
 		res.json(format(stops));
 
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
+	});
+
+});
+
+
+router.get('/agencies/:agencyId/stations'/*, cacher.cache('minute', 10)*/ /*security.ensureJWTAuthenticated*/, (req, res) => {
+
+	var agencyId = req.params.agencyId;
+	var db = DB.schema(agencyId);
+
+	// FIXME:  Add queryString to path
+	Cache.fetch(redisClient, `/agencies/${agencyId}/stations?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+		var start = Date.now();
+		db.Stops.query( (q) => q.limit(30000) ).fetch().then((stops) => {
+			logger.info(`DB Query Done in ${Date.now() - start} ms`);
+
+			stops = stops.toJSON()
+
+			var links = withLinks(req);
+			var desc = withDesc(req);
+			var timestamps = withTimestamps(req);
+			var locations = withLocations(req);
+
+			var stations = [];
+			var stationMap = _.groupBy(stops, 'stop_name');
+			Object.keys(stationMap).forEach((key) => {
+				var stationStops = stationMap[key];
+				var anyStationStop = stationStops[0];
+
+				var station = {name: anyStationStop.stop_name};
+
+				if (desc) {
+					station.desc = anyStationStop.stop_desc;
+				}
+
+				stationStops.forEach((stop) => {
+					stop.id = stop.stop_id;
+					delete stop.stop_id;
+
+					if (stop.stop_code != '') {
+						stop.code = stop.stop_code;
+					}
+					delete stop.stop_code;
+
+					delete stop.stop_name;
+					delete stop.stop_desc;
+
+					if (locations) {
+						stop.location = {
+							type: stop.location_type
+						};
+
+						if (stop.stop_lat != 0 && stop.stop_lon != 0) {
+							stop.location.geo = {
+								lat: stop.stop_lat,
+								lng: stop.stop_lon
+							};
+						}
+
+						if (stop.location.type == 0 && stop.location.geo == undefined) {
+							delete stop.location;
+						}
+					}
+
+					delete stop.location_type;
+					delete stop.stop_lat;
+					delete stop.stop_lon;
+
+					if (stop.parent_station == 0) {
+						delete stop.parent_station;
+					}
+
+					if (links) {
+						stop.links = [{
+							"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+							"rel": "http://gtfs.helyx.io/api/agency",
+							"title": `Agency '${agencyId}'`
+						}, {
+							"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+							"rel": "http://gtfs.helyx.io/api/stop",
+							"title": `Stop '${stop.stop_id}'`
+						}];
+					}
+
+					if (!timestamps) {
+						delete stop.created_at;
+						delete stop.updated_at;
+					}
+
+					delete stop.zone_id;
+					delete stop.stop_url;
+				});
+
+				station.stops = stationStops;
+
+				stations.push(station);
+			});
+
+			callback(undefined, stations);
+		});
+
+	}).then((stations) => {
+		res.json(format(stations));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});

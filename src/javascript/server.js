@@ -5,7 +5,8 @@
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
-var session = require('express-session')
+var session = require('express-session');
+var compression = require('compression');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
@@ -79,6 +80,7 @@ app.use(allowCrossDomain());
 app.use(requestLogger());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(compression({ threshold: 512 }));
 app.use(session({
 	resave: true,
 	saveUninitialized: true,
