@@ -81,6 +81,15 @@ var createSchemaConnection = function(agencyId) {
 		model: Route
 	});
 
+	var Station = bookshelf.Model.extend({
+		tableName: 'stations',
+		idAttribute: 'station_id'
+	});
+
+	var Stations = bookshelf.Collection.extend({
+		model: Station
+	});
+
 	var Trip = bookshelf.Model.extend({
 		tableName: 'trips',
 		idAttribute: 'trip_id'
@@ -116,6 +125,8 @@ var createSchemaConnection = function(agencyId) {
 		Stops: Stops,
 		Route: Route,
 		Routes: Routes,
+		Station: Station,
+		Stations: Stations,
 		Trip: Trip,
 		Trips: Trips,
 		TripService: TripService,
