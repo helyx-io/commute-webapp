@@ -1,6 +1,4 @@
-<div class="container">
   <h1>{{ title }}</h1>
   <p>Welcome to {{ title }}</p>
 
   <a href="/pem-clients/">Pem Clients</a>
-</div>

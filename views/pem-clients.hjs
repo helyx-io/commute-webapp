@@ -1,4 +1,3 @@
-<div class="container">
     <h1>{{ title }}</h1>
 
     <a href="/pem-clients/generate">Generate One</a>
@@ -32,4 +31,3 @@
 	    </tr>
 		{{/pems}}
     </table>
-</div>

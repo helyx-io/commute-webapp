@@ -4,51 +4,44 @@
 
 var passport = require('passport');
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-var BasicStrategy = require('passport-http').BasicStrategy;
 var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
 var ClientJWTBearerStrategy = require('passport-oauth2-jwt-bearer').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var config = require('../conf/config');
 var _ = require('underscore');
-var models  = require('../models');
 
-var AccessToken = models.AccessToken;
-var PemClient = models.PemClient;
-var Client = models.Client;
-var User = models.User;
+var DB = require('../lib/db');
+var db = DB.schema('gtfs');
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Strategies
 ////////////////////////////////////////////////////////////////////////////////////
 
-var ClientJWTBearerStrategy = new ClientJWTBearerStrategy(
+var clientJWTBearerStrategy = new ClientJWTBearerStrategy(
 	function(claimSetIss, done) {
-		PemClient.find({ where: { id: claimSetIss }}).complete((err, pemClient) => {
-			if (err) {
-				return done(err);
-			} else if (!pemClient) {
-				return done(null, false);
+		new db.PemClient({ id: claimSetIss }).fetch().then((pemClient) => {
+			if (!pemClient) {
+				done(null, false);
 			} else {
-				return done(null, pemClient);
+				done(null, pemClient);
 			}
+		}).catch((err) => {
+			done(err);
 		});
 	}
 );
 
-var GoogleStrategy = new GoogleStrategy({
+var googleStrategy = new GoogleStrategy({
 	clientID: config.auth.google.clientId,
 	clientSecret: config.auth.google.clientSecret,
 	callbackURL: config.auth.google.callbackUrl
 }, (accessToken, refreshToken, identifier, profile, done) => {
-	return process.nextTick(() => {
+	process.nextTick(() => {
 		profile.identifier = identifier;
-		User.find({
-			where: { email: profile.emails[0].value }
-		}).complete((err, user) => {
-			if (err) {
-				return done(err, null);
-			} else if (!user) {
-				var user = User.build({
+		new db.User({ email: profile.emails[0].value }).fetch().then((user) => {
+			if (!user) {
+				user = new db.User({
 					email: profile.emails[0].value,
 					firstName: profile.name.givenName,
 					lastName: profile.name.familyName,
@@ -57,9 +50,6 @@ var GoogleStrategy = new GoogleStrategy({
 					googleId: profile.id,
 					role: _.some(config.auth.admin, profile.emails[0].value) ? "ROLE_ADMIN" : "ROLE_USER"
 				});
-				user.save().complete((err, user) => {
-					return done(err, profile);
-				});
 			} else {
 				user.firstName = profile.name.givenName;
 				user.lastName = profile.name.familyName;
@@ -67,47 +57,20 @@ var GoogleStrategy = new GoogleStrategy({
 				user.googleId = profile.id;
 				user.avatarUrl = profile._json.picture ? profile._json.picture : "images/avatar_placeholder.png";
 				user.role = _.some(config.auth.admin, profile.emails[0].value) ? "ROLE_ADMIN" : "ROLE_USER";
-
-				user.save().complete((err) => {
-					return done(err, profile);
-				});
 			}
+
+			return user.save();
+		}).then((profile) => {
+			done(undefined, profile);
+		}).catch((err) => {
+			done(err, null);
 		});
 	});
 });
 
-/*
- BasicStrategy & ClientPasswordStrategy
 
- These strategies are used to authenticate registered OAuth clients.  They are
- employed to protect the `token` endpoint, which consumers use to obtain
- access tokens.  The OAuth 2.0 specification suggests that clients use the
- HTTP Basic scheme to authenticate.  Use of the client password strategy
- allows clients to send the same credentials in the request body (as opposed
- to the `Authorization` header).  While this approach is not recommended by
- the specification, in practice it is quite common.
- */
-var BasicStrategy = new BasicStrategy((username, password, done) => {
-	Client.find({
-		where: { clientId: clientId }
-	}).complete((err, client) => {
-		if (err) {
-			return done(err);
-		}
-		if (!client) {
-			return done(null, false);
-		}
-		if (client.clientSecret !== password) {
-			return done(null, false);
-		}
-		return done(null, client);
-	});
-});
-
-ClientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, done) => {
-	Client.find({
-		where: { clientId: clientId }
-	}).complete((err, client) => {
+var clientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, done) => {
+	new db.Client({ clientId: clientId }).fetch().then((client) => {
 		if (err) {
 			return done(err);
 		}
@@ -118,6 +81,8 @@ ClientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, don
 			return done(null, false);
 		}
 		return done(null, client);
+	}).catch((err) => {
+		done(err);
 	});
 });
 
@@ -129,29 +94,26 @@ ClientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, don
  application, which is issued an access token to make requests on behalf of
  the authorizing user.
  */
-var BearerStrategy = new BearerStrategy((accessToken, done) => {
-	return AccessTokens.find(accessToken, (err, token) => {
-		if (err) {
-			return done(err);
-		}
+var bearerStrategy = new BearerStrategy((accessToken, done) => {
+	new db.AccessTokens({ token: accessToken }).fetch().then((token) => {
 		if (!token) {
-			return done(null, false);
+			done(null, false);
 		}
-		User.find({
-			where: { userID: token.userID }
-		}).complete((err, user) => {
-			var info;
-			if (err) {
-				return done(err);
-			}
-			if (!user) {
-				return done(null, false);
-			}
-			info = {
-				scope: "*"
-			};
-			return done(null, user, info);
-		});
+		else {
+			new db.User({ userID: token.userID }).fetch().then((user) => {
+				if (!user) {
+					done(null, false);
+				}
+				else {
+					var info = {
+						scope: "*"
+					};
+					done(null, user, info);
+				}
+			});
+		}
+	}).catch((err) => {
+		done(err);
 	});
 });
 
@@ -161,9 +123,8 @@ var BearerStrategy = new BearerStrategy((accessToken, done) => {
 ////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-	GoogleStrategy: GoogleStrategy,
-	BasicStrategy: BasicStrategy,
-	ClientPasswordStrategy: ClientPasswordStrategy,
-	BearerStrategy: BearerStrategy,
-	ClientJWTBearerStrategy: ClientJWTBearerStrategy
+	GoogleStrategy: googleStrategy,
+	ClientPasswordStrategy: clientPasswordStrategy,
+	BearerStrategy: bearerStrategy,
+	ClientJWTBearerStrategy: clientJWTBearerStrategy
 };

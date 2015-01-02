@@ -18,6 +18,7 @@ var user = require('./models/user');
 var auth = require('./routes/auth');
 var api = require('./routes/api');
 var pemClients = require('./routes/pemClients');
+var playground = require('./routes/playground');
 
 var authMiddleware = require('./middlewares/authMiddleware');
 var authService = require('./service/authService');
@@ -102,6 +103,7 @@ app.use('/users', users);
 app.use('/auth', auth);
 app.use('/api', api);
 app.use('/pem-clients', pemClients);
+app.use('/playground', playground);
 
 
 ////////////////////////////////////////////////////////////////////////////////////

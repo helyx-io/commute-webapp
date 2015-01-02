@@ -53,35 +53,6 @@ var format = (data) => {
 	return data;
 };
 
-var stationsToJSON = (data) => {
-
-	if (util.isArray(data)) {
-		return data.map((model) => {
-			return stationsToJSON(model);
-		});
-	}
-
-	data.id = data.station_id;
-	data.name = data.station_name;
-	data.location = {
-		lat: data.station_lat,
-		lon: data.station_lon
-	};
-	data.distance = data.station_distance
-
-	delete data.station_id;
-	delete data.station_name;
-	delete data.station_lat;
-	delete data.station_lon;
-	delete data.station_geo;
-	delete data.station_distance;
-
-	delete data.created_at;
-	delete data.updated_at;
-
-	return data;
-};
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
@@ -90,17 +61,30 @@ var stationsToJSON = (data) => {
 var router = express.Router({mergeParams: true});
 
 
-router.get('/'/*, security.ensureJWTAuthenticated*/, (req, res) => {
+router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
 	var db = DB.schema(agencyId);
 
-	// FIXME:  Add queryString to path
-	var start = Date.now();
-	db.Stations.query( (q) => q.limit(30000) ).fetch().then((stations) => {
-		logger.info(`DB Query Done in ${Date.now() - start} ms`);
+	db.Calendars.query( (q) => q ).fetch().then((calendars) => {
 
-		res.json(stationsToJSON(stations.toJSON()));
+		calendars = calendars.toJSON();
+
+		calendars.forEach((calendar) => {
+
+			calendar.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+				"rel": "http://gtfs.helyx.io/api/agency",
+				"title": `Calendar '${agencyId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${calendar.service_id}`,
+				"rel": "http://gtfs.helyx.io/api/calendar",
+				"title": `Calendar '${calendar.service_id}'`
+			}];
+
+		});
+
+		res.json(format(calendars));
 
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
@@ -110,27 +94,33 @@ router.get('/'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 });
 
 
-router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
+router.get('/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
-	var lat = req.query.lat;
-	var lon = req.query.lon;
-	var distance = req.query.distance;
 	var db = DB.schema(agencyId);
 
-	var start = Date.now();
+	var serviceId = req.params.serviceId;
 
-	// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
-	db.Stations.query( (q) => {
-		return q
-			.select(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), station_geo) as station_distance`))
-			.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), station_geo)  < ${distance}`))
-			.orderBy('station_distance', 'asc')
-	}).fetch().then((stations) => {
-		logger.info(`DB Query Done in ${Date.now() - start} ms`);
+	new db.Calendar({service_id: serviceId}).fetch().then((calendar) => {
 
-		res.json(stationsToJSON(stations.toJSON()));
+		if (!calendar) {
+			res.status(404).end();
+		}
+		else {
+			var calendar = calendar.toJSON();
 
+			calendar.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars`,
+				"rel": "http://gtfs.helyx.io/api/calendars",
+				"title": `Calendars`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}`,
+				"rel": "http://gtfs.helyx.io/api/calendar-dates",
+				"title": `Calendar dates`
+			}];
+
+			res.json(format(calendar));
+		}
 
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

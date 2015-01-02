@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Helyx.io - {{ title }}</title>
+    <title>Helyx.io - Playground</title>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
 
     <link rel="stylesheet" href="/styles/app.css" />
@@ -33,22 +33,63 @@
     <meta name="msapplication-TileImage" content="/mstile-144x144.png" />
 </head>
 <body>
-    <div id="container">
-        {{{ yield }}}
-    </div>
-    <script type="text/javascript">
-        /*
-					var _gaq = _gaq || [];
-					_gaq.push(['_setAccount', 'UA-1889791-20']);
-					_gaq.push(['_trackPageview']);
 
-					(function() {
-					var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-					ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-					var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-					})();
-		*/
-    </script>
+<div id="container">
+    <h1>Stops</h1>
+
+    <table id="stops">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Desc</th>
+                <th>Lat</th>
+                <th>Lon</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+</div>
+
+<script id="stops-template" type="text/x-handlebars-template">
+    {{#each stops}}
+    <tr>
+        <td>{{stop_id}}</td>
+        <td>{{stop_name}}</td>
+        <td>{{stop_desc}}</td>
+        <td>{{stop_lat}}</td>
+        <td>{{stop_lon}}</td>
+    </tr>
+    {{/each}}
+</script>
+
+<script>
+    $.ajax({
+        dataType: "json",
+        url: "http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stops/nearest?lat=48.1091&lon=-1.47841&distance=1000&locations=1"
+    }).done(function( stops ) {
+        var source = $("#stops-template").html();
+        var template = Handlebars.compile(source);
+        var html = template({stops: stops});
+        $("#stops tbody").html(html);
+    });
+</script>
+
+<script type="text/javascript">
+    /*
+     var _gaq = _gaq || [];
+     _gaq.push(['_setAccount', 'UA-1889791-20']);
+     _gaq.push(['_trackPageview']);
+
+     (function() {
+     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+     })();
+     */
+</script>
 
 </body>
 </html>

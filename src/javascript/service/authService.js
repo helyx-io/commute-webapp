@@ -3,7 +3,10 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 var logger = require('winston');
-var models = require('../models');
+
+var DB = require('../lib/db');
+var db = DB.schema('gtfs');
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Constants
@@ -21,61 +24,57 @@ var ROLE_ANONYMOUS = "ROLE_ANONYMOUS";
 
 var checkRoleAnonymous = function(req, action) {
 	logger.info("User is authenticated: " + (req.isAuthenticated()));
-	if (!req.isAuthenticated()) {
-		return action === ROLE_ANONYMOUS;
-	}
+	return !req.isAuthenticated() || req.user.role === ROLE_ANONYMOUS;
+
 };
 
 var checkRoleAgent = function(req, action) {
-	if (req.isAuthenticated() && req.user.role === ROLE_AGENT) {
-		return true;
-	}
+	return req.isAuthenticated() && req.user.role === ROLE_AGENT;
 };
 
 var checkRoleSuperAgent = function(req, action) {
-	if (req.isAuthenticated() && req.user.role === ROLE_SUPER_AGENT) {
-		return true;
-	}
+	return req.isAuthenticated() && req.user.role === ROLE_SUPER_AGENT
 };
 
 var checkRoleAdmin = function(req, action) {
-	if (req.isAuthenticated() && req.user.role === ROLE_ADMIN) {
-		return true;
-	}
+	return req.isAuthenticated() && req.user.role === ROLE_ADMIN
+
 };
 
 var authenticateUser = function(email, password, done) {
-	return db.users.findByEmail(email, function(err, user) {
-		if (err) {
-			return done(err);
-		}
+	db.Users({ email: email }).fetch().then((user) => {
 		if (!user) {
-			return done(null, false);
+			done(null, false);
 		}
-		if (user.password !== password) {
-			return done(null, false);
+		else if (user.password !== password) {
+			done(null, false);
 		}
-		return done(null, user);
+		else {
+			done(null, user);
+		}
+	}).catch((err) => {
+		done(err);
 	});
 };
 
 var failureHandler = function(req, res, action) {
 	if (req.isAuthenticated()) {
-		return res.send(401, "Unauthorized");
+		res.send(401, "Unauthorized");
 	} else {
-		return res.send(403, "Forbidden");
+		res.send(403, "Forbidden");
 	}
 };
 
 var serializeUser = function(user, done) {
-	var googleId;
-	googleId = user.id;
-	return done(null, googleId);
+	var googleId = user.id;
+	done(null, googleId);
 };
 
 var deserializeUser = function(id, done) {
-	return models.User.find({where: {googleId: id}}).complete((err, user) => {
-		return done(err, user);
+	return new db.User({id: id}).fetch().then((user) => {
+		done(undefined, user.toJSON());
+	}).catch((err) => {
+		done(err);
 	});
 };
 

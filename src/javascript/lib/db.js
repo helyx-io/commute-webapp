@@ -114,9 +114,55 @@ var createSchemaConnection = function(agencyId) {
 		model: TripService
 	});
 
+
+	var AccessToken = bookshelf.Model.extend({
+		tableName: 'accessTokens',
+		idAttribute: 'id'
+	});
+
+	var AccessTokens = bookshelf.Collection.extend({
+		model: AccessToken
+	});
+
+	var Client = bookshelf.Model.extend({
+		tableName: 'clients',
+		idAttribute: 'id'
+	});
+
+	var Clients = bookshelf.Collection.extend({
+		model: Client
+	});
+
+	var PemClient = bookshelf.Model.extend({
+		tableName: 'pemClients',
+		idAttribute: 'id'
+	});
+
+	var PemClients = bookshelf.Collection.extend({
+		model: PemClient
+	});
+
+	var User = bookshelf.Model.extend({
+		tableName: 'users',
+		idAttribute: 'id'
+	});
+
+	var Users = bookshelf.Collection.extend({
+		model: User
+	});
+
+
 	return {
 		knex: knex,
 		bookshelf: bookshelf,
+		AccessToken: AccessToken,
+		AccessTokens: AccessTokens,
+		Client: Client,
+		Clients: Clients,
+		PemClient: PemClient,
+		PemClients: PemClients,
+		User: User,
+		Users: Users,
 		Agency: Agency,
 		Agencies: Agencies,
 		StopTime: StopTime,

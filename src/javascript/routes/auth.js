@@ -7,14 +7,12 @@ var passport = require('passport');
 
 var security = require('../lib/security');
 
-var models = require('../models');
-
 var oauth2orize = require('oauth2orize');
 var jwtBearer = require('oauth2orize-jwt-bearer').Exchange;
 var crypto = require('crypto');
 
-var PemClient = models.PemClient;
-var AccessToken = models.AccessToken;
+var DB = require('../lib/db');
+var db = DB.schema('gtfs');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -25,39 +23,32 @@ var server = oauth2orize.createServer();
 
 server.exchange('urn:ietf:params:oauth:grant-type:jwt-bearer', jwtBearer(function (client, data, signature, done) {
 
-	PemClient.find({where: {id: client.id}}).complete((err, pem) => {
-		if (err != undefined) {
-			done(err);
-		} else {
-			var pub = pem.publicKey;
+	new db.PemClient({id: client.id}).then((pem) => {
+		var pub = pem.publicKey;
 
-			var verifier = crypto.createVerify("RSA-SHA256");
-			//verifier.update takes in a string of the data that is encrypted in the signature
-			verifier.update(data);
+		var verifier = crypto.createVerify("RSA-SHA256");
+		//verifier.update takes in a string of the data that is encrypted in the signature
+		verifier.update(data);
 
-			if (verifier.verify(pub, signature, 'base64')) {
-				//base64url decode data
-				var b64string = data;
-				var buf = new Buffer(b64string, 'base64').toString('ascii');
-
-				// TODO - verify client_id, scope and expiration are valid from the buf variable above
-
-				var accessToken = AccessToken.build({
-					clientID: client.id
-				});
-				accessToken.save().complete((err, accessToken) => {
-					if (err != undefined) {
-						done(err);
-					}
-					else {
-						done(null, accessToken);
-					}
-				});
-			}
-			else {
-				done(new Error("Could not verify data: '" + data + "' with signature: '" + signature + "'"));
-			}
+		if (!verifier.verify(pub, signature, 'base64')) {
+			throw new Error("Could not verify data: '" + data + "' with signature: '" + signature + "'");
 		}
+
+		//base64url decode data
+		var b64string = data;
+		var buf = new Buffer(b64string, 'base64').toString('ascii');
+
+		// TODO - verify client_id, scope and expiration are valid from the buf variable above
+
+		var accessToken = new db.AccessToken({
+			clientID: client.id
+		});
+
+		return accessToken.save();
+	}).then((accessToken) => {
+		done(null, accessToken);
+	}).catch((err) => {
+		done(err);
 	});
 
 }));

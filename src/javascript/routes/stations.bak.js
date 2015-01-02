@@ -14,7 +14,6 @@ var moment = require('moment');
 var util = require('util');
 
 var security = require('../lib/security');
-var models = require('../models');
 
 var logger = require('../log/logger');
 
