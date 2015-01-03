@@ -80,19 +80,40 @@
 </script>
 
 <script>
+    var config = { // St-Maurice
+        dataset: 'RATP_GTFS_FULL',
+        date: '2014-12-20' +
+        '', // moment().format("YYYY-MM-DD")
+        geo: {
+            lat: 48.814593,
+            lon: 2.4586253
+        },
+        distance: 1000,
+        locations: 1,
+        ignoreDay: 1
+    };
 
-//    var date = moment().format("YYYY-MM-DD");
-    var date = '2015-01-15';
+//    var config = { // Renne
+//        dataset: 'STAR_GTFS_RENNES',
+//        date: '2015-01-15', // moment().format("YYYY-MM-DD")
+//        geo: {
+//            lat: 48.1091,
+//            lon: -1.47841
+//        },
+//        distance: 1000,
+//        locations: 1,
+//        ignoreDay: 0
+//    };
 
-    $("div#container h1").html("Stops - " + moment(date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+    $("div#container h1").html("Stops - " + moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
 
     var stopsTemplate = Handlebars.compile($("#stops-template").html());
     var stopTimeTemplate = Handlebars.compile($("#stop-time-template").html());
 
 
-    function findStops(lat, lon, distance, locations, cb) {
+    function findStops(dataset, lat, lon, distance, locations, cb) {
 
-        var url = 'http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + location;
+        var url = 'http://localhost:9000/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
         $.ajax({
             dataType: 'json',
             url: url
@@ -101,9 +122,9 @@
         });
     }
 
-    function findStopTimes(stopId, date, cb) {
+    function findStopTimes(dataset, stopId, date, ignoreDay, cb) {
 
-        var url = 'http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stop-times-full/' + stopId + '/' + date;
+        var url = 'http://localhost:9000/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
         $.ajax({
             dataType: 'json',
             url: url
@@ -112,7 +133,7 @@
         });
     }
 
-    findStops(48.1091, -1.47841, 1000, 1, function(stops) {
+    findStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations, function(stops) {
         stops.forEach(function(stop, index) {
             stop.index = index;
             stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
@@ -121,7 +142,7 @@
         $("#stops tbody").html(stopsTemplate({stops: stops}));
 
         stops.forEach(function(stop) {
-            findStopTimes(stop.stop_id, date, function(stopTimes) {
+            findStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay, function(stopTimes) {
                 $("#stop-time-" + stop.index).html(stopTimeTemplate({stopTimes: stopTimes}));
 
                 if (stopTimes.length > 0) {

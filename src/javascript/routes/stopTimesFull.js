@@ -95,16 +95,21 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 
 	var stopId = req.params.stopId;
 
-	db.knex
+	var query = db.knex
 		.select('*')
 		.from('stop_times_full')
 		.innerJoin('calendars', 'stop_times_full.service_id', 'calendars.service_id')
 		.where({ stop_id: stopId })
-			.andWhere('start_date', '<=', date)
-			.andWhere('end_date', '>=', date)
-			.andWhere(dayOfWeek, 1)
-		.orderBy('arrival_time')
-	.then((stopTimesFull) => {
+		.andWhere('start_date', '<=', date)
+		.andWhere('end_date', '>=', date);
+
+	if (req.query.ignoreDay != 1) {
+		query.andWhere(dayOfWeek, 1);
+	}
+
+	query.orderBy('arrival_time');
+
+	query.then((stopTimesFull) => {
 		res.json(formatAsStopTimeFull(stopTimesFull));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
