@@ -40,11 +40,14 @@
     <table id="stops">
         <thead>
             <tr>
+                <!--<th>Line</th>-->
                 <th>Id</th>
+                <!--<th>Type</th>-->
+                <!--<th>Direction</th>-->
                 <th>Name</th>
                 <th>Desc</th>
-                <th>Lat</th>
-                <th>Lon</th>
+                <th>Loc</th>
+                <th>Stop Times</th>
             </tr>
         </thead>
         <tbody>
@@ -55,26 +58,83 @@
 
 <script id="stops-template" type="text/x-handlebars-template">
     {{#each stops}}
-    <tr>
+    <tr id="row-{{index}}">
+        <!--<td id="line-{{index}}"></td>-->
         <td>{{stop_id}}</td>
+        <!--<td id="type-{{index}}"></td>-->
+        <!--<td id="direction-{{index}}"></td>-->
         <td>{{stop_name}}</td>
         <td>{{stop_desc}}</td>
-        <td>{{stop_lat}}</td>
-        <td>{{stop_lon}}</td>
+        <td><a href="{{stop_loc_link}}" target="blank">Map</a></td>
+        <td id="stop-time-{{index}}"></td>
     </tr>
     {{/each}}
 </script>
 
+<script id="stop-time-template" type="text/x-handlebars-template">
+    <ul class="stop-times">
+        {{#each stopTimes}}
+            <li style="background-color:#{{route_color}}; color:#{{route_text_color}};">{{arrival_time}}</li>
+        {{/each}}
+    </ul>
+</script>
+
 <script>
-    $.ajax({
-        dataType: "json",
-        url: "http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stops/nearest?lat=48.1091&lon=-1.47841&distance=1000&locations=1"
-    }).done(function( stops ) {
-        var source = $("#stops-template").html();
-        var template = Handlebars.compile(source);
-        var html = template({stops: stops});
-        $("#stops tbody").html(html);
-    });
+
+//    var date = moment().format("YYYY-MM-DD");
+    var date = '2015-01-15';
+
+    $("div#container h1").html("Stops - " + moment(date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+
+    var stopsTemplate = Handlebars.compile($("#stops-template").html());
+    var stopTimeTemplate = Handlebars.compile($("#stop-time-template").html());
+
+
+    function findStops(lat, lon, distance, locations, cb) {
+
+        var url = 'http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + location;
+        $.ajax({
+            dataType: 'json',
+            url: url
+        }).done(function(stops) {
+            cb(stops)
+        });
+    }
+
+    function findStopTimes(stopId, date, cb) {
+
+        var url = 'http://localhost:9000/api/agencies/STAR_GTFS_RENNES/stop-times-full/' + stopId + '/' + date;
+        $.ajax({
+            dataType: 'json',
+            url: url
+        }).done(function(stopTimes) {
+            cb(stopTimes)
+        });
+    }
+
+    findStops(48.1091, -1.47841, 1000, 1, function(stops) {
+        stops.forEach(function(stop, index) {
+            stop.index = index;
+            stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
+        });
+
+        $("#stops tbody").html(stopsTemplate({stops: stops}));
+
+        stops.forEach(function(stop) {
+            findStopTimes(stop.stop_id, date, function(stopTimes) {
+                $("#stop-time-" + stop.index).html(stopTimeTemplate({stopTimes: stopTimes}));
+
+                if (stopTimes.length > 0) {
+//                    $("#line-" + stop.index).css('background-color', '#' + stopTimes[0].route_color);
+//                    $("#line-" + stop.index).css('color', '#' + stopTimes[0].route_text_color);
+//                    $("#type-" + stop.index).html(stopTimes[0].route_type == 3 ? 'Bus' : 'Autre');
+//                    $("#line-" + stop.index).html(stopTimes[0].route_short_name);
+//                    $("#direction-" + stop.index).html(stopTimes[0].direction_id == 0 ? 'Aller' : 'Retour');
+                }
+            });
+        });
+    })
+
 </script>
 
 <script type="text/javascript">

@@ -16,3 +16,9 @@ div#container {
 table {
     width: 100%;
 }
+
+ul.stop-times li {
+    display: inline-block;
+    width: 100px;
+    text-align: center;
+}

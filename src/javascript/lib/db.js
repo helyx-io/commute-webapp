@@ -63,6 +63,15 @@ var createSchemaConnection = function(agencyId) {
 		model: StopTime
 	});
 
+	var StopTimeFull = bookshelf.Model.extend({
+		tableName: 'stop_times_full',
+		idAttribute: 'stop_id'
+	});
+
+	var StopTimesFull = bookshelf.Collection.extend({
+		model: StopTimeFull
+	});
+
 	var Stop = bookshelf.Model.extend({
 		tableName: 'stops',
 		idAttribute: 'stop_id'
@@ -167,6 +176,8 @@ var createSchemaConnection = function(agencyId) {
 		Agencies: Agencies,
 		StopTime: StopTime,
 		StopTimes: StopTimes,
+		StopTimeFull: StopTimeFull,
+		StopTimesFull: StopTimesFull,
 		Stop: Stop,
 		Stops: Stops,
 		Route: Route,

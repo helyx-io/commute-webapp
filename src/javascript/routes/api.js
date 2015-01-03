@@ -11,6 +11,7 @@ var routes = require('./routes');
 var stations = require('./stations');
 var stops = require('./stops');
 var stopTimes = require('./stopTimes');
+var stopTimesFull = require('./stopTimesFull');
 var trips = require('./trips');
 
 
@@ -27,6 +28,7 @@ router.use('/agencies/:agencyId/routes', routes);
 router.use('/agencies/:agencyId/stations', stations);
 router.use('/agencies/:agencyId/stops', stops);
 router.use('/agencies/:agencyId/stop-times', stopTimes);
+router.use('/agencies/:agencyId/stop-times-full', stopTimesFull);
 router.use('/agencies/:agencyId/trips', trips);
 
 

@@ -30,6 +30,11 @@ gulp.task('copy-public-html', function () {
 		.pipe(gulp.dest('build/public'));
 });
 
+gulp.task('copy-public-styles', function () {
+	return gulp.src('public/styles/**/*.css')
+		.pipe(gulp.dest('build/public/styles'));
+});
+
 gulp.task('copy-public-scripts', function () {
 	return gulp.src('public/scripts/**/*')
 		.pipe(gulp.dest('build/public/scripts'));
@@ -67,6 +72,10 @@ gulp.task('watch-public-scripts', function() {
 
 gulp.task('watch-public-html', function() {
 	gulp.watch('public/**/*.html', ['copy-public-html']);
+});
+
+gulp.task('watch-public-styles', function() {
+	gulp.watch('public/styles/**/*.css', ['copy-public-styles']);
 });
 
 gulp.task('watch', [/*'watch-sass', */'watch-views', 'watch-public-scripts']);

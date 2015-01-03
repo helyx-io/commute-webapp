@@ -21,6 +21,20 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
+var daysOfWeek = {
+	1: "Monday",
+	2: "Tuesday",
+	3: "Wednesday",
+	4: "Thursday",
+	5: "Friday",
+	6: "Saturday",
+	7: "Sunday"
+};
+
+var dayOfWeekAsString = (day) => {
+	return daysOfWeek[day];
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -170,50 +184,12 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 	var db = DB.schema(agencyId);
 
 	var routeId = req.params.routeId;
-	var date = req.query.date;
 
-	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
-
-	var calendarQuery = { model: Calendar };
-	var calendarDateQuery = { model: CalendarDate };
-
-	if (date != undefined) {
-		calendarQuery.where = {
-			start_date : { lte: date },
-			end_date : { gte: date }
-		};
-		calendarQuery.where[dayOfWeek] = 1;
-
-		calendarDateQuery.where = { date: date, exception_type: 1 };
-	}
-
-
-	db.TripServices.query( (q) => q.where({route_id: routeId}) ).fetch({ withRelated: [ 'calendar' ]}).then((trips) => {
+	db.TripServices.query( (q) => q.where({route_id: routeId}) ).fetch().then((trips) => {
 
 		trips = trips.toJSON();
 
 		trips.forEach((trip) => {
-
-			if (trip.calendar != undefined) {
-
-				trip.calendar.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
-					"rel": "http://gtfs.helyx.io/api/calendar",
-					"title": `Calendar '${trip.service_id}'`
-				}];
-			}
-
-			if (trip.calendarDates != undefined) {
-				trip.calendarDates.forEach((calendarDate) => {
-
-					calendarDate.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
-						"rel": "http://gtfs.helyx.io/api/calendar-date",
-						"title": `Calendar date '${trip.service_id}'`
-					}];
-
-				});
-			}
 
 			trip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,

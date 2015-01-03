@@ -21,6 +21,20 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
+var daysOfWeek = {
+	1: "Monday",
+	2: "Tuesday",
+	3: "Wednesday",
+	4: "Thursday",
+	5: "Friday",
+	6: "Saturday",
+	7: "Sunday"
+};
+
+var dayOfWeekAsString = (day) => {
+	return daysOfWeek[day];
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -65,52 +79,11 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 	var agencyId = req.params.agencyId;
 	var db = DB.schema(agencyId);
 
-	var date = req.query.date;
-	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
-
-	var calendarQuery = { model: Calendar };
-	var calendarDateQuery = { model: CalendarDate };
-
-	if (date != undefined) {
-		calendarQuery.where = {
-			start_date : { lte: date },
-			end_date : { gte: date }
-		};
-		calendarQuery.where[dayOfWeek] = 1;
-
-		calendarDateQuery.where = { date: date, exception_type: 1 };
-	}
-
-
-	db.TripServices.query( (q) => q ).fetch({ withRelated: ['calendar'] }).then((trips) => {
+	db.TripServices.query( (q) => q ).fetch().then((trips) => {
 
 		trips = trips.toJSON();
 
 		trips.forEach((trip) => {
-
-			if (trip.calendar != undefined) {
-
-				trip.calendar.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
-					"rel": "http://gtfs.helyx.io/api/calendar",
-					"title": `Calendar '${trip.service_id}'`
-				}];
-
-				trip.calendar  = format(trip.calendar);
-			}
-
-			if (trip.calendarDates != undefined) {
-				trip.calendarDates.forEach((calendarDate) => {
-
-					calendarDate.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
-						"rel": "http://gtfs.helyx.io/api/calendar-date",
-						"title": `Calendar date '${trip.service_id}'`
-					}];
-
-				});
-				trip.calendarDates = format(trip.calendarDates);
-			}
 
 			trip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
@@ -141,36 +114,13 @@ router.get('/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var tripId = req.params.tripId;
 
-	new db.TripService({ trip_id: tripId }).fetch({ withRelated: [ 'calendar' ]}).then((trip) => {
+	new db.TripService({ trip_id: tripId }).fetch().then((trip) => {
 
 		if (!trip) {
 			res.status(404).end();
 		}
 		else {
 			trip = trip.toJSON();
-
-			if (trip.calendar != undefined) {
-
-				trip.calendar.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${trip.service_id}`,
-					"rel": "http://gtfs.helyx.io/api/calendar",
-					"title": `Calendar '${trip.service_id}'`
-				}];
-
-				trip.calendar = format(trip.calendar);
-			}
-
-			if (trip.calendarDates != undefined) {
-				trip.calendarDates.forEach((calendarDate) => {
-
-					calendarDate.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${trip.service_id}`,
-						"rel": "http://gtfs.helyx.io/api/calendar-date",
-						"title": `Calendar date '${trip.service_id}'`
-					}];
-
-				});
-			}
 
 			trip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${trip.route_id}`,
@@ -199,7 +149,7 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 
 	var tripId = req.params.tripId;
 
-	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
+	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch().then((stopTimes) => {
 
 		stopTimes = stopTimes.toJSON();
 
@@ -214,16 +164,6 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 				"rel": "http://gtfs.helyx.io/api/stop-time",
 				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
 			}];
-
-			if (stopTime.stop) {
-
-				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop",
-					"title": `Stop '${stopTime.stop_id}'`
-				}];
-
-			}
 
 		});
 
