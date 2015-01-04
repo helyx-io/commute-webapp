@@ -4,7 +4,6 @@
 
 require("es6-shim");
 
-var models = require("./models");
 var passport = require('passport');
 var config = require('./conf/config');
 var logger = require('./log/logger');
