@@ -5,17 +5,15 @@
 var appName = 'helyx.io';
 
 var db = {
-	development: {
-		dialect: 'mysql',
-		database: process.env.MYSQL_DATABASE || 'gtfs',
-		host: process.env.MYSQL_HOSTNAME || 'localhost',
-		port: process.env.MYSQL_PORT || 3306,
-		username: process.env.MYSQL_USERNAME || 'gtfs',
-		password: process.env.MYSQL_PASSWORD || 'gtfs',
-		pool: {
-			min: process.env.MYSQL_POOL_MIN || 0,
-			max: process.env.MYSQL_POOL_MAX || 7
-		}
+	dialect: 'mysql',
+	database: process.env.MYSQL_DATABASE || 'gtfs',
+	host: process.env.MYSQL_HOSTNAME || 'localhost',
+	port: process.env.MYSQL_PORT || 3306,
+	username: process.env.MYSQL_USERNAME || 'gtfs',
+	password: process.env.MYSQL_PASSWORD || 'gtfs',
+	pool: {
+		min: process.env.MYSQL_POOL_MIN || 0,
+		max: process.env.MYSQL_POOL_MAX || 7
 	}
 };
 
@@ -45,7 +43,7 @@ module.exports = {
 			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
-	db: db[env],
+	db: db,
 	monitoring: {
 		newrelic: {
 			apiKey: process.env.NEW_RELIC_API_KEY,
