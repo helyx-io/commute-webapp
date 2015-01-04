@@ -7,10 +7,11 @@
     <title>Helyx.io - Playground</title>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
 
-    <link rel="stylesheet" href="/styles/app.css" />
-    <link rel="stylesheet" media="screen" href="/styles/login-styles.css">
+
     <link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />
     <link rel="stylesheet" href="/bower_components/foundation/css/normalize.css" />
+
+    <link rel="stylesheet" href="/styles/app.css" />
 
     <script src="/bower_components/modernizr/modernizr.js"></script>
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
@@ -34,82 +35,126 @@
 </head>
 <body>
 
-<div id="container">
-    <h1>Stops</h1>
+<div id="content">
 
-    <table id="stops">
-        <thead>
-            <tr>
-                <!--<th>Line</th>-->
-                <th>Id</th>
-                <!--<th>Type</th>-->
-                <!--<th>Direction</th>-->
-                <th>Name</th>
-                <th>Desc</th>
-                <th>Loc</th>
-                <th>Stop Times</th>
-            </tr>
-        </thead>
-        <tbody>
+    <div id="sidebar">
+        <div id="calendar">
+            <h1>Calendar</h1>
+            <div id="days">
 
-        </tbody>
-    </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="main">
+        <div class="page-title">
+            <h1></h1>
+        </div>
+
+        <div id="stops">
+
+        </div>
+    </div>
 </div>
+
+<script id="days-template" type="text/x-handlebars-template">
+    {{#each days}}
+    <div id="day-{{index}}" class="day {{_class}}">
+        <aside>{{day}}</aside>
+        <h4>{{weekDay}}</h4>
+    </div>
+    {{/each}}
+</script>
 
 <script id="stops-template" type="text/x-handlebars-template">
     {{#each stops}}
-    <tr id="row-{{index}}">
-        <!--<td id="line-{{index}}"></td>-->
-        <td>{{stop_id}}</td>
-        <!--<td id="type-{{index}}"></td>-->
-        <!--<td id="direction-{{index}}"></td>-->
-        <td>{{stop_name}}</td>
-        <td>{{stop_desc}}</td>
-        <td><a href="{{stop_loc_link}}" target="blank">Map</a></td>
-        <td id="stop-time-{{index}}"></td>
-    </tr>
+    <div id="row-{{index}}" class="stop">
+        <div class="stop-title">
+            <h2>{{stop_name}} ({{stop_id}})</h2>
+            <h3>{{stop_desc}} - <a href="{{stop_loc_link}}" target="blank">Map</a></h3>
+        </div>
+        <div id="stop-time-{{index}}" class="stop-content"></div>
+    </div>
     {{/each}}
 </script>
 
 <script id="stop-time-template" type="text/x-handlebars-template">
-    <ul class="stop-times">
-        {{#each stopTimes}}
-            <li style="background-color:#{{route_color}}; color:#{{route_text_color}};">{{arrival_time}}</li>
-        {{/each}}
-    </ul>
+    {{#each lines}}
+    <div class="line">
+        <div class="line-title">
+            <span style="background-color:#{{route_color}}; color:#{{route_text_color}};">{{name}}</span>
+        </div>
+        <ul class="stop-times">
+            {{#each stop_times}}
+            <li>{{arrival_time}}</li>
+            {{/each}}
+        </ul>
+    </div>
+    {{/each}}
 </script>
 
 <script>
-    var config = { // St-Maurice
-        dataset: 'RATP_GTFS_FULL',
-        date: '2014-12-20' +
-        '', // moment().format("YYYY-MM-DD")
-        geo: {
-            lat: 48.814593,
-            lon: 2.4586253
-        },
-        distance: 1000,
-        locations: 1,
-        ignoreDay: 1
-    };
-
-//    var config = { // Renne
-//        dataset: 'STAR_GTFS_RENNES',
-//        date: '2015-01-15', // moment().format("YYYY-MM-DD")
+//    var config = { // St-Maurice
+//        dataset: 'RATP_GTFS_FULL',
+//        date: '2014-12-20' +
+//        '', // moment().format("YYYY-MM-DD")
 //        geo: {
-//            lat: 48.1091,
-//            lon: -1.47841
+//            lat: 48.814593,
+//            lon: 2.4586253
 //        },
 //        distance: 1000,
 //        locations: 1,
-//        ignoreDay: 0
+//        ignoreDay: 1
 //    };
 
-    $("div#container h1").html("Stops - " + moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+    var config = { // Renne
+        dataset: 'STAR_GTFS_RENNES',
+        date: '2015-01-15', // moment().format("YYYY-MM-DD")
+        geo: {
+            lat: 48.1091,
+            lon: -1.47841
+        },
+        distance: 1000,
+        locations: 1,
+        ignoreDay: 0
+    };
 
+    $("div#main h1").html(moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+
+    var daysTemplate = Handlebars.compile($("#days-template").html());
     var stopsTemplate = Handlebars.compile($("#stops-template").html());
     var stopTimeTemplate = Handlebars.compile($("#stop-time-template").html());
 
+
+    var daysOfWeek = {
+        1: "Monday",
+        2: "Tuesday",
+        3: "Wednesday",
+        4: "Thursday",
+        5: "Friday",
+        6: "Saturday",
+        7: "Sunday"
+    };
+
+    var dayOfWeekAsString = function(day) {
+        return daysOfWeek[day];
+    };
+
+    function buildCalendar() {
+        var today = moment();
+
+        var startOfCalendar = moment(today).add(-10, 'days');
+
+        var days = [];
+
+        var day = moment(startOfCalendar);
+        for (var i = 0 ; i < 100 ; i++) {
+            days.push({ day: day.format('D'), weekDay: dayOfWeekAsString(day.format('E')), date: day, _class: today.isSame(day) ? 'today' : '' });
+            day = moment(day).add(1, 'days');
+        }
+
+        $("#days").html(daysTemplate({ days: days }));
+    }
 
     function findStops(dataset, lat, lon, distance, locations, cb) {
 
@@ -122,7 +167,7 @@
         });
     }
 
-    function findStopTimes(dataset, stopId, date, ignoreDay, cb) {
+    function findLinesStopTimes(dataset, stopId, date, ignoreDay, cb) {
 
         var url = 'http://localhost:9000/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
         $.ajax({
@@ -133,28 +178,29 @@
         });
     }
 
+    buildCalendar();
+
     findStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations, function(stops) {
         stops.forEach(function(stop, index) {
             stop.index = index;
             stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
         });
 
-        $("#stops tbody").html(stopsTemplate({stops: stops}));
+        $("#stops").html(stopsTemplate({stops: stops}));
 
         stops.forEach(function(stop) {
-            findStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay, function(stopTimes) {
-                $("#stop-time-" + stop.index).html(stopTimeTemplate({stopTimes: stopTimes}));
+            findLinesStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay, function(lines) {
+                lines.forEach(function(line) {
+                    if (line.stop_times.length > 0) {
+                        line.route_color = line.stop_times[0].route_color;
+                        line.route_text_color = line.stop_times[0].route_text_color;
+                    }
+                });
 
-                if (stopTimes.length > 0) {
-//                    $("#line-" + stop.index).css('background-color', '#' + stopTimes[0].route_color);
-//                    $("#line-" + stop.index).css('color', '#' + stopTimes[0].route_text_color);
-//                    $("#type-" + stop.index).html(stopTimes[0].route_type == 3 ? 'Bus' : 'Autre');
-//                    $("#line-" + stop.index).html(stopTimes[0].route_short_name);
-//                    $("#direction-" + stop.index).html(stopTimes[0].direction_id == 0 ? 'Aller' : 'Retour');
-                }
+                $("#stop-time-" + stop.index).html(stopTimeTemplate({lines: lines}));
             });
         });
-    })
+    });
 
 </script>
 

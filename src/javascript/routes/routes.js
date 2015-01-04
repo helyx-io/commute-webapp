@@ -21,20 +21,6 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
-var daysOfWeek = {
-	1: "Monday",
-	2: "Tuesday",
-	3: "Wednesday",
-	4: "Thursday",
-	5: "Friday",
-	6: "Saturday",
-	7: "Sunday"
-};
-
-var dayOfWeekAsString = (day) => {
-	return daysOfWeek[day];
-};
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions

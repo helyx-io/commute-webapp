@@ -3,21 +3,25 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 var fs = require('fs');
-
-var qs = require('querystring');
-
-var express = require('express');
-var passport = require('passport');
-
-var moment = require('moment');
-
 var util = require('util');
 
-var security = require('../lib/security');
+var _ = require('lodash');
+var express = require('express');
+var moment = require('moment');
+var passport = require('passport');
+var qs = require('querystring');
 
 var logger = require('../log/logger');
+var security = require('../lib/security');
 
-var _ = require('lodash');
+var calendars = require('./calendars');
+var calendarDates = require('./calendarDates');
+var routes = require('./routes');
+var stations = require('./stations');
+var stops = require('./stops');
+var stopTimes = require('./stopTimes');
+var stopTimesFull = require('./stopTimesFull');
+var trips = require('./trips');
 
 var DB = require('../lib/db');
 
@@ -60,6 +64,14 @@ var format = (data) => {
 
 var router = express.Router({mergeParams: true});
 
+router.use('/:agencyId/calendars', calendars);
+router.use('/:agencyId/calendarDates', calendarDates);
+router.use('/:agencyId/routes', routes);
+router.use('/:agencyId/stations', stations);
+router.use('/:agencyId/stops', stops);
+router.use('/:agencyId/stop-times', stopTimes);
+router.use('/:agencyId/stop-times-full', stopTimesFull);
+router.use('/:agencyId/trips', trips);
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 

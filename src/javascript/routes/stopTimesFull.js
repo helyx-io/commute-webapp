@@ -110,7 +110,17 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 	query.orderBy('arrival_time');
 
 	query.then((stopTimesFull) => {
-		res.json(formatAsStopTimeFull(stopTimesFull));
+
+		var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
+
+		var lines = Object.keys(stopTimesFullByLine).map( (line) => {
+			return {
+				name: line,
+				stop_times: stopTimesFullByLine[line]
+			};
+		});
+
+		res.json(formatAsStopTimeFull(lines));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
