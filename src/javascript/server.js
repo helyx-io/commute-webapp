@@ -97,7 +97,6 @@ app.use(role);
 ////////////////////////////////////////////////////////////////////////////////////
 
 app.use('/', routes);
-app.use('/users', users);
 app.use('/auth', auth);
 app.use('/api', api);
 app.use('/pem-clients', pemClients);
