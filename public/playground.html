@@ -38,10 +38,27 @@
 <div id="content">
 
     <div id="sidebar">
-        <div id="calendar">
-            <h1>Calendar</h1>
-            <div id="days">
+        <div id="settings">
+            <button id="#btn-calendar"><img src="/images/stops.png" alt="Stops" /></button>
+            <button id="#btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
+            <button id="#btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
+        </div>
 
+        <div id="sidebar-calendar-container">
+            <div id="sidebar-calendar">
+                <h1>Calendar</h1>
+                <div id="days">
+
+                </div>
+            </div>
+        </div>
+
+        <div id="sidebar-stops-container">
+            <div id="sidebar-stops">
+                <h1>Stops</h1>
+                <div id="sidebar-stops-content">
+
+                </div>
             </div>
         </div>
     </div>
@@ -66,9 +83,18 @@
     {{/each}}
 </script>
 
+<script id="sidebar-stops-template" type="text/x-handlebars-template">
+    {{#each stops}}
+    <div id="sidebar-stop-row-{{index}}" class="sidebar-stop {{_class}}">
+        <h4>{{stop_name}} ({{stop_id}})</h4>
+        <h5>{{stop_desc}}</h5>
+    </div>
+    {{/each}}
+</script>
+
 <script id="stops-template" type="text/x-handlebars-template">
     {{#each stops}}
-    <div id="row-{{index}}" class="stop">
+    <div id="stop-row-{{index}}" class="stop">
         <div class="stop-title">
             <h2>{{stop_name}} ({{stop_id}})</h2>
             <h3>{{stop_desc}} - <a href="{{stop_loc_link}}" target="blank">Map</a></h3>
@@ -84,16 +110,23 @@
         <div class="line-title">
             <span style="background-color:#{{route_color}}; color:#{{route_text_color}};">{{name}}</span>
         </div>
-        <ul class="stop-times">
-            {{#each stop_times}}
-            <li>{{arrival_time}}</li>
-            {{/each}}
-        </ul>
+        <div class="line-content">
+            <ul class="stop-times">
+                {{#each stop_times}}
+                <li>{{arrival_time}}</li>
+                {{/each}}
+            </ul>
+        </div>
     </div>
     {{/each}}
 </script>
 
 <script>
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Configuration variables
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //    var config = { // St-Maurice
 //        dataset: 'RATP_GTFS_FULL',
 //        date: '2014-12-20' +
@@ -116,15 +149,14 @@
         },
         distance: 1000,
         locations: 1,
-        ignoreDay: 0
+        ignoreDay: 0,
+        stopId: '4152'
     };
-
-    $("div#main h1").html(moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
 
     var daysTemplate = Handlebars.compile($("#days-template").html());
     var stopsTemplate = Handlebars.compile($("#stops-template").html());
+    var sidebarStopsTemplate = Handlebars.compile($("#sidebar-stops-template").html());
     var stopTimeTemplate = Handlebars.compile($("#stop-time-template").html());
-
 
     var daysOfWeek = {
         1: "Monday",
@@ -136,12 +168,19 @@
         7: "Sunday"
     };
 
-    var dayOfWeekAsString = function(day) {
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Helper functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    function dayOfWeekAsString(day) {
         return daysOfWeek[day];
     };
 
     function buildCalendar() {
-        var today = moment();
+        // Make it comparable with other built dates
+        var today = moment(moment().format('YYYY-MM-DD'), 'YYYY-MM-DD');
+        var selectedDate = moment(config.date, 'YYYY-MM-DD');
 
         var startOfCalendar = moment(today).add(-10, 'days');
 
@@ -149,7 +188,8 @@
 
         var day = moment(startOfCalendar);
         for (var i = 0 ; i < 100 ; i++) {
-            days.push({ day: day.format('D'), weekDay: dayOfWeekAsString(day.format('E')), date: day, _class: today.isSame(day) ? 'today' : '' });
+            var dayClass = day.isSame(today) ? 'today' : (day.isSame(selectedDate) ? 'selected': '');
+            days.push({ day: day.format('D'), weekDay: dayOfWeekAsString(day.format('E')), date: day, _class: dayClass });
             day = moment(day).add(1, 'days');
         }
 
@@ -178,15 +218,24 @@
         });
     }
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Entry Point
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    $("div#main h1").html(moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+
     buildCalendar();
 
     findStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations, function(stops) {
         stops.forEach(function(stop, index) {
             stop.index = index;
+            stop._class = stop.stop_id == config.stopId ? 'selected' : '';
             stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
         });
 
         $("#stops").html(stopsTemplate({stops: stops}));
+        $("#sidebar-stops-content").html(sidebarStopsTemplate({stops: stops}));
 
         stops.forEach(function(stop) {
             findLinesStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay, function(lines) {
