@@ -198,7 +198,7 @@
 
     function findStops(dataset, lat, lon, distance, locations, cb) {
 
-        var url = 'http://localhost:9000/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
+        var url = '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
         $.ajax({
             dataType: 'json',
             url: url
@@ -209,7 +209,7 @@
 
     function findLinesStopTimes(dataset, stopId, date, ignoreDay, cb) {
 
-        var url = 'http://localhost:9000/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
+        var url = '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
         $.ajax({
             dataType: 'json',
             url: url
