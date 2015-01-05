@@ -2,6 +2,7 @@
   "name": "gtfs-webapp",
   "dependencies": {
     "foundation": "zurb/bower-foundation",
-    "moment": "~2.8.4"
+    "moment": "~2.8.4",
+    "handlebars": "~2.0.0"
   }
 }
