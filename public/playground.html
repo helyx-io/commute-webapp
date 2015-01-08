@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" ng-app="gtfsApp">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,6 +18,7 @@
     <script src="/bower_components/foundation/js/foundation.min.js"></script>
     <script src="/bower_components/moment/min/moment.min.js"></script>
     <script src="/bower_components/handlebars/handlebars.min.js"></script>
+    <script src="/bower_components/angular/angular.min.js"></script>
 
     <script src="/scripts/app.js"></script>
 
@@ -39,232 +40,296 @@
 
     <div id="sidebar">
         <div id="settings">
-            <button id="#btn-calendar"><img src="/images/stops.png" alt="Stops" /></button>
+            <button id="#btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
             <button id="#btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
             <button id="#btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
         </div>
 
-        <div id="sidebar-calendar-container">
+        <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
             <div id="sidebar-calendar">
                 <h1>Calendar</h1>
                 <div id="days">
-
+                    <div id="day-{{index}}" ng-repeat="day in days" class="day {{day._class}}">
+                        <aside>{{day.day}}</aside>
+                        <h4>{{day.weekDay}}</h4>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="sidebar-stops-container">
+        <div id="sidebar-stops-container" ng-cloak ng-controller="SidebarStopsController">
             <div id="sidebar-stops">
                 <h1>Stops</h1>
                 <div id="sidebar-stops-content">
-
+                    <div id="sidebar-stop-row-{{index}}" ng-repeat="stop in stops" class="sidebar-stop {{stop._class}}">
+                        <h4>{{stop.stop_name}} ({{stop.stop_id}})</h4>
+                        <h5>{{stop.stop_desc}}</h5>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="main">
+    <div id="main" ng-cloak ng-controller="MainController">
         <div class="page-title">
-            <h1></h1>
+            <h1>{{date}}</h1>
         </div>
 
-        <div id="stops">
-
+        <div id="stops" ng-cloak ng-controller="StopsController">
+            <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
+                <div class="stop-title">
+                    <h2>{{stop.stop_name}} ({{stop.stop_id}})</h2>
+                    <h3>{{stop.stop_desc}} - <a href="{{stop.stop_loc_link}}" target="blank">Map</a></h3>
+                </div>
+                <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
+                    <div class="line" ng-repeat="line in lines" ng-controller="StopLineController">
+                        <div class="line-title">
+                            <span style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</span>
+                        </div>
+                        <div class="line-content">
+                            <ul class="stop-times">
+                                <li ng-repeat="stop_time in line.stop_times">
+                                    {{stop_time.arrival_time}}
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<script id="days-template" type="text/x-handlebars-template">
-    {{#each days}}
-    <div id="day-{{index}}" class="day {{_class}}">
-        <aside>{{day}}</aside>
-        <h4>{{weekDay}}</h4>
-    </div>
-    {{/each}}
-</script>
-
-<script id="sidebar-stops-template" type="text/x-handlebars-template">
-    {{#each stops}}
-    <div id="sidebar-stop-row-{{index}}" class="sidebar-stop {{_class}}">
-        <h4>{{stop_name}} ({{stop_id}})</h4>
-        <h5>{{stop_desc}}</h5>
-    </div>
-    {{/each}}
-</script>
-
-<script id="stops-template" type="text/x-handlebars-template">
-    {{#each stops}}
-    <div id="stop-row-{{index}}" class="stop">
-        <div class="stop-title">
-            <h2>{{stop_name}} ({{stop_id}})</h2>
-            <h3>{{stop_desc}} - <a href="{{stop_loc_link}}" target="blank">Map</a></h3>
-        </div>
-        <div id="stop-time-{{index}}" class="stop-content"></div>
-    </div>
-    {{/each}}
-</script>
-
-<script id="stop-time-template" type="text/x-handlebars-template">
-    {{#each lines}}
-    <div class="line">
-        <div class="line-title">
-            <span style="background-color:#{{route_color}}; color:#{{route_text_color}};">{{name}}</span>
-        </div>
-        <div class="line-content">
-            <ul class="stop-times">
-                {{#each stop_times}}
-                <li>{{arrival_time}}</li>
-                {{/each}}
-            </ul>
-        </div>
-    </div>
-    {{/each}}
-</script>
-
 <script>
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Configuration variables
+    /// Application
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//    var config = { // St-Maurice
-//        dataset: 'RATP_GTFS_FULL',
-//        date: '2014-12-20' +
-//        '', // moment().format("YYYY-MM-DD")
-//        geo: {
-//            lat: 48.814593,
-//            lon: 2.4586253
-//        },
-//        distance: 1000,
-//        locations: 1,
-//        ignoreDay: 1
-//    };
-
-    var config = { // Renne
-        dataset: 'STAR_GTFS_RENNES',
-        date: '2015-01-15', // moment().format("YYYY-MM-DD")
-        geo: {
-            lat: 48.1091,
-            lon: -1.47841
-        },
-        distance: 1000,
-        locations: 1,
-        ignoreDay: 0,
-        stopId: '4152'
-    };
-
-    var daysTemplate = Handlebars.compile($("#days-template").html());
-    var stopsTemplate = Handlebars.compile($("#stops-template").html());
-    var sidebarStopsTemplate = Handlebars.compile($("#sidebar-stops-template").html());
-    var stopTimeTemplate = Handlebars.compile($("#stop-time-template").html());
-
-    var daysOfWeek = {
-        1: "Monday",
-        2: "Tuesday",
-        3: "Wednesday",
-        4: "Thursday",
-        5: "Friday",
-        6: "Saturday",
-        7: "Sunday"
-    };
+    var gtfsApp = angular.module('gtfsApp', []);
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Helper functions
+    /// Factory
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    function dayOfWeekAsString(day) {
-        return daysOfWeek[day];
-    };
+    gtfsApp.factory('Globals', function() {
 
-    function buildCalendar() {
-        // Make it comparable with other built dates
-        var today = moment(moment().format('YYYY-MM-DD'), 'YYYY-MM-DD');
-        var selectedDate = moment(config.date, 'YYYY-MM-DD');
+//        var config = { // St-Maurice
+//            dataset: 'RATP_GTFS_FULL',
+//            date: '2014-12-20' +
+//            '', // moment().format("YYYY-MM-DD")
+//            geo: {
+//                lat: 48.814593,
+//                lon: 2.4586253
+//            },
+//            distance: 1000,
+//            locations: 1,
+//            ignoreDay: 1
+//        };
 
-        var startOfCalendar = moment(today).add(-10, 'days');
+        var config = { // Renne
+            dataset: 'STAR_GTFS_RENNES',
+            date: '2015-01-15', // moment().format("YYYY-MM-DD")
+            geo: {
+                lat: 48.1091,
+                lon: -1.47841
+            },
+            distance: 1000,
+            locations: 1,
+            ignoreDay: 0,
+            stopId: '4152'
+        };
 
-        var days = [];
-
-        var day = moment(startOfCalendar);
-        for (var i = 0 ; i < 100 ; i++) {
-            var dayClass = day.isSame(today) ? 'today' : (day.isSame(selectedDate) ? 'selected': '');
-            days.push({ day: day.format('D'), weekDay: dayOfWeekAsString(day.format('E')), date: day, _class: dayClass });
-            day = moment(day).add(1, 'days');
-        }
-
-        $("#days").html(daysTemplate({ days: days }));
-    }
-
-    function findStops(dataset, lat, lon, distance, locations, cb) {
-
-        var url = '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
-        $.ajax({
-            dataType: 'json',
-            url: url
-        }).done(function(stops) {
-            cb(stops)
-        });
-    }
-
-    function findLinesStopTimes(dataset, stopId, date, ignoreDay, cb) {
-
-        var url = '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
-        $.ajax({
-            dataType: 'json',
-            url: url
-        }).done(function(stopTimes) {
-            cb(stopTimes)
-        });
-    }
+        return {
+            baseURL: 'http://gtfs.helyx.io',
+            config: config
+        };
+    });
 
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /// Entry Point
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    gtfsApp.factory('CalendarService', function($http, $q, Globals) {
+        var calendarService = {};
 
-    $("div#main h1").html(moment(config.date, "YYYY-MM-DD").format("DD/MM/YYYY"));
+        var daysOfWeek = {
+            1: "Monday",
+            2: "Tuesday",
+            3: "Wednesday",
+            4: "Thursday",
+            5: "Friday",
+            6: "Saturday",
+            7: "Sunday"
+        };
 
-    buildCalendar();
+        calendarService.dayOfWeekAsString = function(day) {
+            return daysOfWeek[day];
+        };
 
-    findStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations, function(stops) {
-        stops.forEach(function(stop, index) {
-            stop.index = index;
-            stop._class = stop.stop_id == config.stopId ? 'selected' : '';
-            stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
-        });
+        calendarService.buildCalendar = function() {
 
-        $("#stops").html(stopsTemplate({stops: stops}));
-        $("#sidebar-stops-content").html(sidebarStopsTemplate({stops: stops}));
+            var defer = $q.defer();
 
-        stops.forEach(function(stop) {
-            findLinesStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay, function(lines) {
-                lines.forEach(function(line) {
-                    if (line.stop_times.length > 0) {
-                        line.route_color = line.stop_times[0].route_color;
-                        line.route_text_color = line.stop_times[0].route_text_color;
-                    }
+            // Make it comparable with other built dates
+            var today = moment(moment().format('YYYY-MM-DD'), 'YYYY-MM-DD');
+            var selectedDate = moment(Globals.config.date, 'YYYY-MM-DD');
+
+            var startOfCalendar = moment(today).add(-10, 'days');
+
+            var days = [];
+
+            var day = moment(startOfCalendar);
+            for (var i = 0 ; i < 100 ; i++) {
+                var dayClass = day.isSame(today) ? 'today' : (day.isSame(selectedDate) ? 'selected': '');
+                days.push({ day: day.format('D'), weekDay: calendarService.dayOfWeekAsString(day.format('E')), date: day, _class: dayClass });
+                day = moment(day).add(1, 'days');
+            }
+
+            defer.resolve(days);
+
+            return defer.promise;
+        };
+
+        return calendarService;
+    });
+
+    gtfsApp.factory('StopService', function($http, $q, Globals) {
+        var stopService = {};
+
+        stopService.fetchStops = function(dataset, lat, lon, distance, locations) {
+            var defer = $q.defer();
+
+            if (stopService.stops) {
+                return defer.resolve(stopService.stops);
+            }
+            else {
+                var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
+
+                $http.get(url).success(function (stops, status, headers, config) {
+                    stopService.stops = stops;
+                    defer.resolve(stops);
+                }).error(function (data, status, headers, config) {
+                    defer.reject(new Error('HTTP error[' + status + ']'));
                 });
+            }
 
-                $("#stop-time-" + stop.index).html(stopTimeTemplate({lines: lines}));
+            return defer.promise;
+        };
+
+        stopService.fetchLinesStopTimes = function(dataset, stopId, date, ignoreDay) {
+            var defer = $q.defer();
+
+            var url = Globals.baseURL + '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
+
+            $http.get(url).success(function (stopTimes, status, headers, config) {
+                defer.resolve(stopTimes);
+            }).error(function (data, status, headers, config) {
+                defer.reject(new Error('HTTP error[' + status + ']'));
             });
+
+            return defer.promise;
+        };
+
+        return stopService;
+
+    });
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /// Controllers
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    gtfsApp.controller('MainController', function($scope, Globals) {
+        $scope.date = moment(Globals.config.date, "YYYY-MM-DD").format("DD/MM/YYYY");
+    });
+
+    gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService) {
+        $scope.days = [];
+
+        CalendarService.buildCalendar().then(function(days) {
+            $scope.days = days;
         });
     });
 
+    gtfsApp.controller('SidebarStopsController', function($scope, $http, Globals, StopService) {
+
+        $scope.stops = [];
+
+        var config = Globals.config;
+
+        StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+            $scope.stops = stops;
+
+            $scope.stops.forEach(function (stop, index) {
+                stop.index = index;
+                stop._class = stop.stop_id == config.stopId ? 'selected' : '';
+                stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
+            });
+
+        }).catch(function(err) {
+            console.log(err);
+        });
+
+     });
+
+    gtfsApp.controller('StopsController', function($scope, Globals, StopService) {
+
+        $scope.stops = [];
+
+        var config = Globals.config;
+
+        StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+
+            $scope.stops = stops;
+
+        }).catch(function(err) {
+            console.log(err);
+        });
+
+    });
+
+
+    gtfsApp.controller('StopController', function($scope, Globals, StopService) {
+
+        $scope.lines = [];
+
+        var config = Globals.config;
+
+        StopService.fetchLinesStopTimes(config.dataset, $scope.stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
+            lines.forEach(function(line) {
+                if (line.stop_times.length > 0) {
+                    line.route_color = line.stop_times[0].route_color;
+                    line.route_text_color = line.stop_times[0].route_text_color;
+                }
+            });
+
+            $scope.lines = lines;
+
+        }).catch(function(err) {
+            console.log(err);
+        });
+
+    });
+
+
+    gtfsApp.controller('StopLinesController', function($scope) {
+
+    });
+
+
+    gtfsApp.controller('StopLineController', function($scope) {
+
+    });
+
+
 </script>
 
-<script type="text/javascript">
-    /*
-     var _gaq = _gaq || [];
-     _gaq.push(['_setAccount', 'UA-1889791-20']);
-     _gaq.push(['_trackPageview']);
+<script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+        (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+            m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-     (function() {
-     var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-     ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-     var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-     })();
-     */
+    ga('create', 'UA-1889791-26', 'auto');
+    ga('send', 'pageview');
 </script>
 
 </body>
