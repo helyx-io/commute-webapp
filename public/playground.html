@@ -2,7 +2,7 @@
 <html lang="fr" ng-app="gtfsApp">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
     <title>Helyx.io - Playground</title>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
@@ -13,6 +13,8 @@
 
     <link rel="stylesheet" href="/styles/app.css" />
 
+    <script src="//maps.googleapis.com/maps/api/js?v=3.exp"></script>
+
     <script src="/bower_components/modernizr/modernizr.js"></script>
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/foundation/js/foundation.min.js"></script>
@@ -20,6 +22,7 @@
     <script src="/bower_components/angular/angular.min.js"></script>
 
     <script src="/scripts/app.js"></script>
+
 
     <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png" />
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png" />
@@ -71,12 +74,18 @@
 
     <div id="main" ng-cloak ng-controller="MainController">
         <div class="page-title">
+            <aside><button id="toggle-map" ng-click="toggleMap()"><img src="/images/map.png"></button></aside>
             <h1>{{date}}</h1>
+        </div>
+
+        <div id="map" ng-cloak ng-controller="MapController">
+            <div id="map-canvas"></div>
         </div>
 
         <div id="stops" ng-cloak ng-controller="StopsController">
             <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
                 <div class="stop-title">
+                    <aside>{{(stop.stop_distance / 1000).toFixed(3)}} km</aside>
                     <h2>{{stop.stop_name}} ({{stop.stop_id}})</h2>
                     <h3>{{stop.stop_desc}} - <a href="{{stop.stop_loc_link}}" target="blank">Map</a></h3>
                 </div>
@@ -97,6 +106,7 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <script>
@@ -141,7 +151,7 @@
         };
 
         return {
-            baseURL: 'http://gtfs.helyx.io',
+            baseURL: location.hostname == 'localhost' ? 'http://localhost:9000' : 'http://gtfs.helyx.io',
             config: config
         };
     });
@@ -192,26 +202,31 @@
     });
 
     gtfsApp.factory('StopService', function($http, $q, Globals) {
-        var stopService = {};
+        var stopService = { };
 
         stopService.fetchStops = function(dataset, lat, lon, distance, locations) {
-            var defer = $q.defer();
 
             if (stopService.stops) {
-                return defer.resolve(stopService.stops);
+                var defer = $q.defer();
+                defer.resolve(stopService.stops);
+                return defer.promise;
+            } else if (stopService.defer) {
+                return stopService.defer.promise;
             }
             else {
+                stopService.defer = $q.defer();
+
                 var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
 
                 $http.get(url).success(function (stops, status, headers, config) {
                     stopService.stops = stops;
-                    defer.resolve(stops);
+                    stopService.defer.resolve(stops);
                 }).error(function (data, status, headers, config) {
-                    defer.reject(new Error('HTTP error[' + status + ']'));
+                    stopService.defer.reject(new Error('HTTP error[' + status + ']'));
                 });
             }
 
-            return defer.promise;
+            return stopService.defer.promise;
         };
 
         stopService.fetchLinesStopTimes = function(dataset, stopId, date, ignoreDay) {
@@ -238,7 +253,24 @@
 
     gtfsApp.controller('MainController', function($scope, Globals) {
         $scope.date = moment(Globals.config.date, "YYYY-MM-DD").format("DD/MM/YYYY");
-    });
+
+        var mapElt = angular.element("#map");
+        var stopsElt = angular.element('#stops');
+
+        $scope.toggleMap = function() {
+            if (mapElt.hasClass('hidden')) {
+                console.log("Map is hidden. Going to be visible");
+                mapElt.removeClass('hidden');
+                stopsElt.addClass('hidden');
+            } else {
+                console.log("Map is visible. Going to be hidden");
+                stopsElt.removeClass('hidden');
+                mapElt.addClass('hidden');
+            }
+        }
+
+        $scope.toggleMap();
+     });
 
     gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService) {
         $scope.days = [];
@@ -289,6 +321,7 @@
     gtfsApp.controller('StopController', function($scope, Globals, StopService) {
 
         $scope.lines = [];
+        $scope.Math = window.Math;
 
         var config = Globals.config;
 
@@ -318,6 +351,52 @@
 
     });
 
+
+    gtfsApp.controller('MapController', function($scope, $q, Globals, StopService) {
+
+        $scope.stops = [];
+
+        var config = Globals.config;
+
+        $scope.initialize = function() {
+
+            StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+
+                $scope.stops = stops;
+
+                var geoLoc = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
+
+                var mapOptions = {
+                    zoom: 17,
+                    center: geoLoc
+                };
+
+                var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+                var myMarker = new google.maps.Marker({
+                    position: geoLoc,
+                    map: map,
+                    title: stop.stop_name
+                });
+
+                $scope.stops.forEach(function(stop) {
+                    new google.maps.Marker({
+                        position: new google.maps.LatLng(stop.stop_lat, stop.stop_lon),
+                        map: map,
+                        title: stop.stop_name
+                    });
+                });
+
+            }).catch(function(err) {
+                console.log(err);
+            });
+
+        };
+
+        google.maps.event.addDomListener(window, 'load', $scope.initialize);
+
+
+    });
 
 </script>
 

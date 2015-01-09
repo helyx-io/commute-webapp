@@ -200,6 +200,35 @@ h1, h2, h3, h4, h5, h6 {
     color: #FFFFFF;
 }
 
+.page-title aside {
+    float: right;
+}
+
+
+.page-title aside button {
+    margin: 0px;
+    padding: 0px;
+    width: 66px;
+    height: 66px;
+    background: none;
+    border: none;
+    outline: none;
+}
+
+.page-title aside button:hover {
+    background: #006586;
+}
+
+.page-title aside button img {
+    margin: 0px;
+    padding: 0px;
+    width: 32px;
+    height: 32px;
+    opacity: 0.5;
+}
+
+
+
 #stops {
     padding: 30px 20px;
     background: #FBFBFB;
@@ -238,6 +267,11 @@ h1, h2, h3, h4, h5, h6 {
     background: #F0F0F0;
     margin: 0px;
     padding: 2px 0px;
+}
+
+.stop-title aside {
+    float: right;
+    margin: 5px 10px;
 }
 
 .stop-content {
@@ -295,4 +329,22 @@ ul.stop-times li {
 ul.stop-times li:hover {
     background: #E0E0E0;
     cursor: default;
+}
+
+div#map {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+div#map-canvas {
+     margin: 0px;
+     padding: 0px;
+     width: 100%;
+     height: 100%;
+ }
+
+.hidden {
+    display: none;
 }
