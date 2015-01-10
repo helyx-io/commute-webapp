@@ -20,6 +20,7 @@
     <script src="/bower_components/foundation/js/foundation.min.js"></script>
     <script src="/bower_components/moment/min/moment.min.js"></script>
     <script src="/bower_components/angular/angular.min.js"></script>
+    <script src="/bower_components/lodash/dist/lodash.min.js"></script>
 
     <script src="/scripts/app.js"></script>
 
@@ -158,8 +159,8 @@
             dataset: 'STAR_GTFS_RENNES',
             date: '2015-01-15', // moment().format("YYYY-MM-DD")
             geo: {
-                lat: 48.1091,
-                lon: -1.47841
+                lat: 48.1089,
+                lon: -1.47798
             },
             distance: 1000,
             locations: 1,
@@ -337,7 +338,6 @@
     gtfsApp.controller('StopController', function($scope, Globals, StopService) {
 
         $scope.lines = [];
-        $scope.Math = window.Math;
 
         var config = Globals.config;
 
@@ -372,6 +372,10 @@
 
         $scope.stops = [];
 
+        $scope.geocoder = new google.maps.Geocoder();
+
+;
+
         var config = Globals.config;
 
         $scope.initialize = function() {
@@ -389,19 +393,82 @@
 
                 var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
-                var myMarker = new google.maps.Marker({
+                var positionMarker = new google.maps.Marker({
                     position: geoLoc,
                     map: map,
-                    title: stop.stop_name
+                    title: stop.stop_name,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
                 });
 
+                var infoWindow = new google.maps.InfoWindow();
+                infoWindow.show = function(map, marker) {
+                    if ($scope.openedInfoWindow) {
+                        $scope.openedInfoWindow.close();
+                    }
+                    $scope.openedInfoWindow = infoWindow;
+                    var legend = "<b>Ma position - (Lat:" + geoLoc.lat().toFixed(3) + ", Lon:" + geoLoc.lng().toFixed(3) + ")" + (stop.address ? '</b><br>' + stop.address : '');
+                    infoWindow.setContent(legend);
+                    infoWindow.open(map, marker);
+                };
+
+                google.maps.event.addListener(positionMarker, 'click', function() {
+                    if (stop.geocoded) {
+                        infoWindow.show(map, positionMarker);
+                    }
+                    else {
+                        $scope.geocoder.geocode({'latLng': geoLoc}, function(results, status) {
+                            stop.geocoded = true;
+                            if (status == google.maps.GeocoderStatus.OK) {
+                                if (results[0]) {
+                                    stop.address = _.pluck(results[0].address_components, 'long_name').join(', ');
+                                    infoWindow.show(map, positionMarker);
+                                }
+                            }
+                        });
+                    }
+                });
+
+
                 $scope.stops.forEach(function(stop) {
-                    new google.maps.Marker({
+                    var stopMarker = new google.maps.Marker({
                         position: new google.maps.LatLng(stop.stop_lat, stop.stop_lon),
                         map: map,
-                        title: stop.stop_name
+                        title: stop.stop_name,
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
                     });
+
+                    var infoWindow = new google.maps.InfoWindow();
+                    infoWindow.show = function(map, marker) {
+                        if ($scope.openedInfoWindow) {
+                            $scope.openedInfoWindow.close();
+                        }
+                        $scope.openedInfoWindow = infoWindow;
+                        var distance = (stop.stop_distance / 1000).toFixed(3);
+                        var legend = '<b>' + stop.stop_name + ' - ' + distance + ' km' + (stop.address ? '</b><br>' + stop.address : '');
+                        infoWindow.setContent(legend);
+                        infoWindow.open(map, marker);
+                    };
+
+                    google.maps.event.addListener(stopMarker, 'click', function() {
+                        if (stop.geocoded) {
+                            infoWindow.show(map, stopMarker);
+                        }
+                        else {
+                            $scope.geocoder.geocode({'latLng': geoLoc}, function(results, status) {
+                                stop.geocoded = true;
+                                if (status == google.maps.GeocoderStatus.OK) {
+                                    if (results[0]) {
+                                        stop.address = _.pluck(results[0].address_components, 'long_name').join(', ');
+                                        infoWindow.show(map, stopMarker);
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+
                 });
+
 
             }).catch(function(err) {
                 console.log(err);
