@@ -74,7 +74,7 @@
 
     <div id="main" ng-cloak ng-controller="MainController">
         <div class="page-title">
-            <aside><button id="toggle-map" ng-click="toggleMap()"><img src="/images/map.png"></button></aside>
+            <aside><button id="toggle-map" ng-click="toggleMapVisibility()"><img src="/images/map.png"></button></aside>
             <h1>{{date}}</h1>
         </div>
 
@@ -257,19 +257,17 @@
         var mapElt = angular.element("#map");
         var stopsElt = angular.element('#stops');
 
-        $scope.toggleMap = function() {
-            if (mapElt.hasClass('hidden')) {
-                console.log("Map is hidden. Going to be visible");
-                mapElt.removeClass('hidden');
-                stopsElt.addClass('hidden');
-            } else {
-                console.log("Map is visible. Going to be hidden");
+        $scope.toggleMapVisibility = function() {
+            if (stopsElt.hasClass('hidden')) {
                 stopsElt.removeClass('hidden');
                 mapElt.addClass('hidden');
+            } else {
+                stopsElt.addClass('hidden');
+                mapElt.removeClass('hidden');
             }
-        }
+        };
 
-        $scope.toggleMap();
+        $scope.toggleMapVisibility();
      });
 
     gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService) {
