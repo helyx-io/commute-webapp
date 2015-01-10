@@ -40,71 +40,88 @@
 
 <div id="content">
 
-    <div id="sidebar">
-        <div id="settings">
-            <button id="#btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
-            <button id="#btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
-            <button id="#btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
-        </div>
-
-        <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
-            <div id="sidebar-calendar">
-                <h1>Calendar</h1>
-                <div id="days">
-                    <div id="day-{{index}}" ng-repeat="day in days" class="day {{day._class}}">
-                        <aside>{{day.day}}</aside>
-                        <h4>{{day.weekDay}}</h4>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="sidebar-stops-container" ng-cloak ng-controller="SidebarStopsController">
-            <div id="sidebar-stops">
-                <h1>Stops</h1>
-                <div id="sidebar-stops-content">
-                    <div id="sidebar-stop-row-{{index}}" ng-repeat="stop in stops" class="sidebar-stop {{stop._class}}">
-                        <h4>{{stop.stop_name}} ({{stop.stop_id}})</h4>
-                        <h5>{{stop.stop_desc}}</h5>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div id="header" ng-controller="HeaderController">
+        <aside><button id="toggle-map" ng-click="toggleMapVisibility()"><img src="/images/map.png"></button></aside>
+        <h1>{{date}}</h1>
     </div>
 
     <div id="main" ng-cloak ng-controller="MainController">
-        <div class="page-title">
-            <aside><button id="toggle-map" ng-click="toggleMapVisibility()"><img src="/images/map.png"></button></aside>
-            <h1>{{date}}</h1>
-        </div>
 
-        <div id="map" ng-cloak ng-controller="MapController">
-            <div id="map-canvas"></div>
-        </div>
-
-        <div id="stops" ng-cloak ng-controller="StopsController">
-            <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
-                <div class="stop-title">
-                    <aside>{{(stop.stop_distance / 1000).toFixed(3)}} km</aside>
-                    <h2>{{stop.stop_name}} ({{stop.stop_id}})</h2>
-                    <h3>{{stop.stop_desc}} - <a href="{{stop.stop_loc_link}}" target="blank">Map</a></h3>
+        <div id="sidebar-left">
+            <div id="sidebar-left-header">
+                <div id="settings">
+                    <button id="#btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
+                    <button id="#btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
+                    <button id="#btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
                 </div>
-                <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
-                    <div class="line" ng-repeat="line in lines" ng-controller="StopLineController">
-                        <div class="line-title">
-                            <span style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</span>
+            </div>
+
+            <div id="sidebar-left-content">
+                <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
+                    <div id="sidebar-calendar">
+                        <h1>Calendar</h1>
+                        <div id="days">
+                            <div id="day-{{index}}" ng-repeat="day in days" class="day {{day._class}}">
+                                <aside>{{day.day}}</aside>
+                                <h4>{{day.weekDay}}</h4>
+                            </div>
                         </div>
-                        <div class="line-content">
-                            <ul class="stop-times">
-                                <li ng-repeat="stop_time in line.stop_times">
-                                    {{stop_time.arrival_time}}
-                                </li>
-                            </ul>
+                    </div>
+                </div>
+
+                <div id="sidebar-stops-container" ng-cloak ng-controller="SidebarStopsController">
+                    <div id="sidebar-stops">
+                        <h1>Stops</h1>
+                        <div id="sidebar-stops-content">
+                            <div id="sidebar-stop-row-{{index}}" ng-repeat="stop in stops" class="sidebar-stop {{stop._class}}">
+                                <h4>{{stop.stop_name}} ({{stop.stop_id}})</h4>
+                                <h5>{{stop.stop_desc}}</h5>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <div id="main-content">
+            <div id="map" ng-cloak ng-controller="MapController">
+                <div id="map-canvas"></div>
+            </div>
+        </div>
+
+        <div id="sidebar-right">
+
+            <div id="sidebar-right-content">
+                <div id="stops" ng-cloak ng-controller="StopsController">
+                    <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
+                        <div class="stop-title">
+                            <aside>{{(stop.stop_distance / 1000).toFixed(3)}} km</aside>
+                            <h2>{{stop.stop_name}} ({{stop.stop_id}})</h2>
+                            <h3>{{stop.stop_desc}} - <a href="{{stop.stop_loc_link}}" target="blank">Map</a></h3>
+                        </div>
+                        <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
+                            <div class="line" ng-repeat="line in lines" ng-controller="StopLineController">
+                                <div class="line-title">
+                                    <span style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</span>
+                                </div>
+                                <div class="line-content">
+                                    <ul class="stop-times">
+                                        <li ng-repeat="stop_time in line.stop_times">
+                                            {{stop_time.arrival_time}}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="footer">
+        <h1>Copyright 2015 - Helyx.io</h1>
     </div>
 
 </div>
@@ -251,24 +268,25 @@
     /// Controllers
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    gtfsApp.controller('MainController', function($scope, Globals) {
+    gtfsApp.controller('HeaderController', function($scope, Globals) {
         $scope.date = moment(Globals.config.date, "YYYY-MM-DD").format("DD/MM/YYYY");
+    });
+
+    gtfsApp.controller('MainController', function($scope, Globals) {
 
         var mapElt = angular.element("#map");
         var stopsElt = angular.element('#stops');
 
         $scope.toggleMapVisibility = function() {
-            if (stopsElt.hasClass('hidden')) {
-                stopsElt.removeClass('hidden');
-                mapElt.addClass('hidden');
+            if (stopsElt.hasClass('stop-hidden')) {
+                stopsElt.removeClass('stop-hidden');
+                mapElt.addClass('map-hidden');
             } else {
-                stopsElt.addClass('hidden');
-                mapElt.removeClass('hidden');
+                stopsElt.addClass('stop-hidden');
+                mapElt.removeClass('map-hidden');
             }
         };
-
-        $scope.toggleMapVisibility();
-     });
+    });
 
     gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService) {
         $scope.days = [];
@@ -392,8 +410,6 @@
         };
 
         google.maps.event.addDomListener(window, 'load', $scope.initialize);
-
-
     });
 
 </script>

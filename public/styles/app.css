@@ -7,6 +7,7 @@
 body {
     background-color: #FFFFFF;
     /*transform: translate3d(0,0,0);*/
+    overflow: hidden;
 }
 
 [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
@@ -18,27 +19,108 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #content {
-    position: relative;
-    width: 100%;
 }
 
-#sidebar {
+#header {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    height: 66px;
+}
+
+#sidebar-left {
+    position: absolute;
+    top: 0px;
+    left: 0px;
     width: 240px;
+    bottom: 0px;
     background: #FFFFFF;
     border-right: #E0E0E0 1px solid;
 }
 
-#main {
-    position: relative;
-    margin-left: 240px;
-    height: 782px;
-    overflow: scroll;
+#sidebar-left-header {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    height: 66px;
+}
+
+#sidebar-left-content {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    top: 66px;
+    bottom: 0px;
+    overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
 }
+
+#main {
+    position: absolute;
+    width: 100%;
+    top: 66px;
+    bottom: 42px;
+}
+
+#main-content {
+    position: absolute;
+    margin: 0px;
+    padding: 0px;
+    left: 240px;
+    right: 380px;
+    top: 0px;
+    bottom: 0px;
+}
+
+#sidebar-right {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    width: 380px;
+    bottom: 0px;
+    background: #FFFFFF;
+    border-left: #E0E0E0 1px solid;
+}
+
+#sidebar-right-content {
+    height: 100%;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+}
+
+#footer {
+    position: absolute;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    height: 42px;
+    margin: 0;
+    padding: 0;
+    background: red;
+}
+
+
+#map {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#map-canvas {
+    margin: 0px;
+    padding: 0px;
+    width: 100%;
+    height: 100%;
+}
+
+#map-canvas img {
+    max-width:none;
+}
+
+
 
 #settings {
     height:66px;
@@ -65,20 +147,13 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0px;
     width: 32px;
     height: 32px;
-    opacity: 0.5;
 }
 
 #sidebar-calendar {
     margin: 0px;
-    height: 330px;
-    overflow: scroll;
-    -webkit-overflow-scrolling: touch;
 }
 #sidebar-stops {
     margin: 0px;
-    height: 385px;
-    overflow: scroll;
-    -webkit-overflow-scrolling: touch;
 }
 
 #sidebar-calendar h1, #sidebar-stops h1 {
@@ -182,17 +257,12 @@ h1, h2, h3, h4, h5, h6 {
 
 
 
-
-
-
-
-
-.page-title {
+#header {
     margin: 0px 0px;
     background: #007095;
 }
 
-.page-title h1 {
+#header h1 {
     font-weight: 100;
     margin: 0px 10px;
     padding: 5px 10px;
@@ -200,12 +270,11 @@ h1, h2, h3, h4, h5, h6 {
     color: #FFFFFF;
 }
 
-.page-title aside {
+#header aside {
     float: right;
 }
 
-
-.page-title aside button {
+#header aside button {
     margin: 0px;
     padding: 0px;
     width: 66px;
@@ -215,22 +284,33 @@ h1, h2, h3, h4, h5, h6 {
     outline: none;
 }
 
-.page-title aside button:hover {
+#header aside button:hover {
     background: #006586;
 }
 
-.page-title aside button img {
+#header aside button img {
     margin: 0px;
     padding: 0px;
     width: 32px;
     height: 32px;
-    opacity: 0.5;
+}
+
+#footer {
+    margin: 0px 0px;
+    background: #007095;
+}
+
+#footer h1 {
+    text-align: right;
+    font-size: 20px;
+    color: #FFFFFF;
+    margin: 0px;
+    padding: 7px 10px;
 }
 
 
-
 #stops {
-    padding: 30px 20px;
+    padding: 0px;
     background: #FBFBFB;
 }
 
@@ -254,12 +334,9 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.9em;
 }
 
-.stop:first-child {
-    margin-top: 20px;
-}
 
 .stop {
-    margin-bottom: 40px;
+    margin-bottom: 0px;
     background: #444444;
 }
 
@@ -275,7 +352,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stop-content {
-    margin: 20px 30px;
+    margin: 20px 30px 0px 30px;
 }
 
 .lines {
@@ -329,26 +406,4 @@ ul.stop-times li {
 ul.stop-times li:hover {
     background: #E0E0E0;
     cursor: default;
-}
-
-div#map {
-    margin: 0px;
-    padding: 0px;
-    width: 100%;
-    height: 100%;
-}
-
-div#map-canvas {
-    margin: 0px;
-    padding: 0px;
-    width: 100%;
-    height: 100%;
-}
-
-div#map-canvas img {
-    max-width:none;
-}
-
-.hidden {
-    display: none;
 }
