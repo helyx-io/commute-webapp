@@ -16,9 +16,7 @@ var security = require('../lib/security');
 
 var router = express.Router();
 
-router.get('/', security.ensureAuthenticated, (req, res) => {
-  res.render('index', { title: 'Express' });
-});
+router.get("/", (req, res) => res.redirect('/index.html'));
 
 router.get('/login', (req, res) => {
   res.render('login');
