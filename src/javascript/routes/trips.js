@@ -21,20 +21,6 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
-var daysOfWeek = {
-	1: "Monday",
-	2: "Tuesday",
-	3: "Wednesday",
-	4: "Thursday",
-	5: "Friday",
-	6: "Saturday",
-	7: "Sunday"
-};
-
-var dayOfWeekAsString = (day) => {
-	return daysOfWeek[day];
-};
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -149,9 +135,13 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 
 	var tripId = req.params.tripId;
 
-	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch().then((stopTimes) => {
+	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
 
 		stopTimes = stopTimes.toJSON();
+
+		stopTimes.sort(function(st1, st2) {
+			return st1.stop_sequence - st2.stop_sequence
+		});
 
 		stopTimes.forEach((stopTime) => {
 
@@ -165,6 +155,13 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
 			}];
 
+			if (stopTime.stop) {
+				stopTime.stop.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+					"rel": "http://gtfs.helyx.io/api/stop",
+					"title": `Stop '${stopTime.stop_id}'`
+				}];
+			}
 		});
 
 		res.json(format(stopTimes));

@@ -42,21 +42,21 @@
 <div id="content">
 
     <div id="header" ng-controller="HeaderController">
-        <aside><button id="toggle-map" ng-click="toggleMapVisibility()"><img src="/images/map.png"></button></aside>
+
+        <div id="settings">
+            <button id="btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
+            <button id="btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
+            <button id="btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
+        </div>
+
+        <aside>
+        </aside>
         <h1>{{date}}</h1>
     </div>
 
     <div id="main" ng-cloak ng-controller="MainController">
 
         <div id="sidebar-left">
-            <div id="sidebar-left-header">
-                <div id="settings">
-                    <button id="#btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
-                    <button id="#btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
-                    <button id="#btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
-                </div>
-            </div>
-
             <div id="sidebar-left-content">
                 <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
                     <div id="sidebar-calendar">
@@ -103,7 +103,9 @@
                         <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
                             <div class="line" ng-repeat="line in lines" ng-controller="StopLineController">
                                 <div class="line-title">
-                                    <span style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</span>
+                                    <aside style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
+                                    <h3>{{line.first_stop.stop_name}}</h3>
+                                    <h4>{{line.last_stop.stop_name}}</h4>
                                 </div>
                                 <div class="line-content">
                                     <ul class="stop-times">
@@ -247,7 +249,14 @@
             return stopService.defer.promise;
         };
 
-        stopService.fetchLinesStopTimes = function(dataset, stopId, date, ignoreDay) {
+        return stopService;
+    });
+
+
+    gtfsApp.factory('LineService', function($http, $q, Globals) {
+        var lineService = { };
+
+        lineService.fetchStopTimes = function(dataset, stopId, date, ignoreDay) {
             var defer = $q.defer();
 
             var url = Globals.baseURL + '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
@@ -261,9 +270,32 @@
             return defer.promise;
         };
 
-        return stopService;
+        return lineService;
 
     });
+
+
+    gtfsApp.factory('TripService', function($http, $q, Globals) {
+        var tripService = { };
+
+        tripService.fetchStopTimes = function(dataset, tripId) {
+
+            var defer = $q.defer();
+
+            var url = Globals.baseURL + '/api/agencies/' + dataset + '/trips/' + tripId + '/stop-times';
+
+            $http.get(url).success(function (stopTimes, status, headers, config) {
+                defer.resolve(stopTimes);
+            }).error(function (data, status, headers, config) {
+                defer.reject(new Error('HTTP error[' + status + ']'));
+            });
+
+            return defer.promise;
+        };
+
+        return tripService;
+    });
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /// Controllers
@@ -335,15 +367,16 @@
     });
 
 
-    gtfsApp.controller('StopController', function($scope, Globals, StopService) {
+    gtfsApp.controller('StopController', function($scope, Globals, LineService) {
 
         $scope.lines = [];
 
         var config = Globals.config;
 
-        StopService.fetchLinesStopTimes(config.dataset, $scope.stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
+        LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
             lines.forEach(function(line) {
                 if (line.stop_times.length > 0) {
+                    line.trip_id = line.stop_times[0].trip_id;
                     line.route_color = line.stop_times[0].route_color;
                     line.route_text_color = line.stop_times[0].route_text_color;
                 }
@@ -363,7 +396,16 @@
     });
 
 
-    gtfsApp.controller('StopLineController', function($scope) {
+    gtfsApp.controller('StopLineController', function($scope, Globals, TripService) {
+
+        var config = Globals.config;
+
+        TripService.fetchStopTimes(config.dataset, $scope.line.trip_id).then(function(stopTimes) {
+            $scope.line.first_stop = stopTimes[0].stop;
+            $scope.line.last_stop = stopTimes[stopTimes.length - 1].stop;
+        }).catch(function(err) {
+            console.log(err);
+        });
 
     });
 
@@ -402,11 +444,14 @@
 
                 var infoWindow = new google.maps.InfoWindow();
                 infoWindow.show = function(map, marker) {
+                    if (infoWindow == $scope.openedInfoWindow) {
+                        return ;
+                    }
                     if ($scope.openedInfoWindow) {
                         $scope.openedInfoWindow.close();
                     }
                     $scope.openedInfoWindow = infoWindow;
-                    var legend = "<b>Ma position - (Lat:" + geoLoc.lat().toFixed(3) + ", Lon:" + geoLoc.lng().toFixed(3) + ")" + (stop.address ? '</b><br>' + stop.address : '');
+                    var legend = "<b>Ma position" + '</b>' + (stop.address ? '<br>' + stop.address : '');
                     infoWindow.setContent(legend);
                     infoWindow.open(map, marker);
                 };
@@ -416,7 +461,7 @@
                         infoWindow.show(map, positionMarker);
                     }
                     else {
-                        $scope.geocoder.geocode({'latLng': geoLoc}, function(results, status) {
+                        $scope.geocoder.geocode({ latLng: positionMarker.position }, function(results, status) {
                             stop.geocoded = true;
                             if (status == google.maps.GeocoderStatus.OK) {
                                 if (results[0]) {
@@ -439,12 +484,15 @@
 
                     var infoWindow = new google.maps.InfoWindow();
                     infoWindow.show = function(map, marker) {
+                        if (infoWindow == $scope.openedInfoWindow) {
+                            return ;
+                        }
                         if ($scope.openedInfoWindow) {
                             $scope.openedInfoWindow.close();
                         }
                         $scope.openedInfoWindow = infoWindow;
                         var distance = (stop.stop_distance / 1000).toFixed(3);
-                        var legend = '<b>' + stop.stop_name + ' - ' + distance + ' km' + (stop.address ? '</b><br>' + stop.address : '');
+                        var legend = '<b>' + stop.stop_name + '</b> - <i><small>' + distance + ' km</small></i>' + (stop.address ? '<br>' + stop.address : '');
                         infoWindow.setContent(legend);
                         infoWindow.open(map, marker);
                     };
@@ -454,7 +502,7 @@
                             infoWindow.show(map, stopMarker);
                         }
                         else {
-                            $scope.geocoder.geocode({'latLng': geoLoc}, function(results, status) {
+                            $scope.geocoder.geocode({ latLng: stopMarker.position }, function(results, status) {
                                 stop.geocoded = true;
                                 if (status == google.maps.GeocoderStatus.OK) {
                                     if (results[0]) {
