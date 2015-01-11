@@ -39,24 +39,26 @@
 </head>
 <body>
 
-<div id="content">
+<div id="content" ng-controller="AppController">
 
     <div id="header" ng-controller="HeaderController">
 
-        <div id="settings">
-            <button id="btn-stops"><img src="/images/stops.png" alt="Stops" /></button>
-            <button id="btn-calendar"><img src="/images/calendar.png" alt="Calendar" /></button>
-            <button id="btn-settings"><img src="/images/settings.png" alt="Settings" /></button>
+        <div id="settings" ng-controller="SettingsController">
+            <button id="btn-calendar" class="selected" ng-click="toggleCalendarSelection()"><ng-include src="'/images/calendar48.svg'" alt="Calendar" /></button>
+            <button id="btn-stops" class="selected" ng-click="toggleStopsSelection()"><ng-include src="'/images/two114.svg'" alt="stops" /></button>
+            <button id="btn-settings"><ng-include src="'/images/settings20.svg'" alt="Settings" /></button>
         </div>
 
-        <aside>
-        </aside>
-        <h1>{{date}}</h1>
+        <div id="header-date">
+            <button id="btn-date-previous"><ng-include src="'/images/arrow395.svg'" alt="stops" /></button>
+            <h1>{{date}}</h1>
+            <button id="btn-date-next"><ng-include src="'/images/arrow396.svg'" alt="stops" /></button>
+        </div>
     </div>
 
     <div id="main" ng-cloak ng-controller="MainController">
 
-        <div id="sidebar-left">
+        <div id="sidebar-left" ng-show="showLeftSidebar">
             <div id="sidebar-left-content">
                 <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
                     <div id="sidebar-calendar">
@@ -92,7 +94,7 @@
 
         <div id="sidebar-right">
 
-            <div id="sidebar-right-content">
+            <div id="sidebar-right-content" ng-show="showRightSidebar">
                 <div id="stops" ng-cloak ng-controller="StopsController">
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
                         <div class="stop-title">
@@ -301,8 +303,72 @@
     /// Controllers
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    gtfsApp.controller('AppController', function($scope, Globals) {
+        $scope.showLeftSidebar = true;
+        $scope.showRightSidebar = true;
+
+
+        $scope.toggleCalendarSelection = function() {
+            $scope.showLeftSidebar = !$scope.showLeftSidebar;
+
+            var sidebarLeft = angular.element('#sidebar-left');
+            var mainContent = angular.element('#main-content');
+
+            if ($scope.showLeftSidebar) {
+                mainContent.removeClass('left-full');
+                sidebarLeft.removeClass('hidden');
+            } else {
+                mainContent.addClass('left-full');
+                sidebarLeft.addClass('hidden');
+            }
+        };
+
+        $scope.toggleStopsSelection = function() {
+            $scope.showRightSidebar = !$scope.showRightSidebar;
+
+            var sidebarRight = angular.element('#sidebar-right');
+            var mainContent = angular.element('#main-content');
+
+            if ($scope.showRightSidebar) {
+                mainContent.removeClass('right-full');
+                sidebarRight.removeClass('hidden');
+            } else {
+                mainContent.addClass('right-full');
+                sidebarRight.addClass('hidden');
+            }
+        };
+
+    });
+
     gtfsApp.controller('HeaderController', function($scope, Globals) {
         $scope.date = moment(Globals.config.date, "YYYY-MM-DD").format("DD/MM/YYYY");
+    });
+
+    gtfsApp.controller('SettingsController', function($scope, Globals) {
+
+        $scope.toggleCalendarSelection = function() {
+            $scope.$parent.toggleCalendarSelection();
+
+            var btnCalendar = angular.element('#btn-calendar');
+
+            if ($scope.showLeftSidebar) {
+                btnCalendar.addClass('selected')
+            } else {
+                btnCalendar.removeClass('selected')
+            }
+        };
+
+        $scope.toggleStopsSelection = function() {
+            $scope.$parent.toggleStopsSelection();
+
+            var btnStops = angular.element('#btn-stops');
+
+            if ($scope.showRightSidebar) {
+                btnStops.addClass('selected')
+            } else {
+                btnStops.removeClass('selected')
+            }
+        };
     });
 
     gtfsApp.controller('MainController', function($scope, Globals) {
