@@ -22,6 +22,10 @@ var _ = require('lodash');
 var DB = require('../lib/db');
 
 
+var redisClient = require('redis').createClient();
+var Cache = require("../lib/cache");
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ////////////////////////////////////////////////////////////////////////////////////
@@ -100,38 +104,41 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	var distance = req.query.distance;
 	var db = DB.schema(agencyId);
 
-	var start = Date.now();
+	Cache.fetch(redisClient, `/agencies/${agencyId}/stops/nearest?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+		var start = Date.now();
+		// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
+		db.Stops.query( (q) => {
+			return q
+				.select(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) as stop_distance`))
+				.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo)  < ${distance}`))
+				.orderBy('stop_distance', 'asc')
+		}).fetch().then((stops) => {
+			logger.info(`DB Query Done in ${Date.now() - start} ms`);
 
-	// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
-	db.Stops.query( (q) => {
-		return q
-			.select(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) as stop_distance`))
-			.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo)  < ${distance}`))
-			.orderBy('stop_distance', 'asc')
-	}).fetch().then((stops) => {
-		logger.info(`DB Query Done in ${Date.now() - start} ms`);
+			stops = stops.toJSON();
 
-		stops = stops.toJSON();
+			stops.forEach((stop) => {
+				delete stop.created_at;
+				delete stop.updated_at;
 
-		stops.forEach((stop) => {
-			delete stop.created_at;
-			delete stop.updated_at;
+				if (withLinks(req)) {
+					stop.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+						"rel": "http://gtfs.helyx.io/api/agency",
+						"title": `Agency '${agencyId}'`
+					}, {
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+						"rel": "http://gtfs.helyx.io/api/stop",
+						"title": `Stop '${stop.stop_id}'`
+					}];
+				}
+			});
 
-			if (withLinks(req)) {
-				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
-					"rel": "http://gtfs.helyx.io/api/agency",
-					"title": `Agency '${agencyId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop",
-					"title": `Stop '${stop.stop_id}'`
-				}];
-			}
+			callback(undefined, stops);
 		});
 
-		res.json(format(stops));
-
+	}).then((data) => {
+		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});

@@ -22,6 +22,10 @@ var _ = require('lodash');
 var DB = require('../lib/db');
 
 
+var redisClient = require('redis').createClient();
+var Cache = require("../lib/cache");
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ////////////////////////////////////////////////////////////////////////////////////
@@ -135,37 +139,44 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 
 	var tripId = req.params.tripId;
 
-	db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
+	Cache.fetch(redisClient, `/agencies/${agencyId}/${tripId}/stop-times?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+		var start = Date.now();
 
-		stopTimes = stopTimes.toJSON();
+		db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
+			logger.info(`DB Query Done in ${Date.now() - start} ms`);
 
-		stopTimes.sort(function(st1, st2) {
-			return st1.stop_sequence - st2.stop_sequence
-		});
+			stopTimes = stopTimes.toJSON();
 
-		stopTimes.forEach((stopTime) => {
+			stopTimes.sort(function(st1, st2) {
+				return st1.stop_sequence - st2.stop_sequence
+			});
 
-			stopTime.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
-				"rel": "http://gtfs.helyx.io/api/trip",
-				"title": `Trip '${tripId}'`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
-				"rel": "http://gtfs.helyx.io/api/stop-time",
-				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
-			}];
+			stopTimes.forEach((stopTime) => {
 
-			if (stopTime.stop) {
-				stopTime.stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop",
-					"title": `Stop '${stopTime.stop_id}'`
+				stopTime.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
+					"rel": "http://gtfs.helyx.io/api/trip",
+					"title": `Trip '${tripId}'`
+				}, {
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
+					"rel": "http://gtfs.helyx.io/api/stop-time",
+					"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
 				}];
-			}
+
+				if (stopTime.stop) {
+					stopTime.stop.links = [{
+						"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+						"rel": "http://gtfs.helyx.io/api/stop",
+						"title": `Stop '${stopTime.stop_id}'`
+					}];
+				}
+			});
+
+			callback(undefined, format(stopTimes));
 		});
 
-		res.json(format(stopTimes));
-
+	}).then((data) => {
+		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});

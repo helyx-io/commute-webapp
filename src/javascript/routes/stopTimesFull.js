@@ -21,6 +21,11 @@ var _ = require('lodash');
 
 var DB = require('../lib/db');
 
+
+var redisClient = require('redis').createClient();
+var Cache = require("../lib/cache");
+
+
 var daysOfWeek = {
 	1: "Monday",
 	2: "Tuesday",
@@ -95,32 +100,40 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 
 	var stopId = req.params.stopId;
 
-	var query = db.knex
-		.select('*')
-		.from('stop_times_full')
-		.innerJoin('calendars', 'stop_times_full.service_id', 'calendars.service_id')
-		.where({ stop_id: stopId })
-		.andWhere('start_date', '<=', date)
-		.andWhere('end_date', '>=', date);
+	Cache.fetch(redisClient, `/agencies/${agencyId}/${stopId}/${date}?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+		var start = Date.now();
 
-	if (req.query.ignoreDay != 1) {
-		query.andWhere(dayOfWeek, 1);
-	}
+		var query = db.knex
+			.select('*')
+			.from('stop_times_full')
+			.innerJoin('calendars', 'stop_times_full.service_id', 'calendars.service_id')
+			.where({ stop_id: stopId })
+			.andWhere('start_date', '<=', date)
+			.andWhere('end_date', '>=', date);
 
-	query.orderBy('arrival_time');
+		if (req.query.ignoreDay != 1) {
+			query.andWhere(dayOfWeek, 1);
+		}
 
-	query.then((stopTimesFull) => {
+		query.orderBy('arrival_time');
 
-		var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
+		query.then((stopTimesFull) => {
+			logger.info(`DB Query Done in ${Date.now() - start} ms`);
 
-		var lines = Object.keys(stopTimesFullByLine).map( (line) => {
-			return {
-				name: line,
-				stop_times: stopTimesFullByLine[line]
-			};
+			var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
+
+			var lines = Object.keys(stopTimesFullByLine).map( (line) => {
+				return {
+					name: line,
+					stop_times: stopTimesFullByLine[line]
+				};
+			});
+
+			callback(undefined, formatAsStopTimeFull(lines));
 		});
 
-		res.json(formatAsStopTimeFull(lines));
+	}).then((data) => {
+		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});

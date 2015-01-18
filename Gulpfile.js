@@ -16,9 +16,9 @@ var sass = require('gulp-sass');
 
 gulp.task('build-sources', function () {
 	return gulp.src('src/javascript/**/*.js')
-		.pipe(sourcemaps.init())
+		//.pipe(sourcemaps.init())
 		.pipe(traceur())
-		.pipe(sourcemaps.write('.'))
+		//.pipe(sourcemaps.write('.'))
 		.pipe(gulp.dest('build'));
 });
 
