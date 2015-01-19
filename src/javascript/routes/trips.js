@@ -139,7 +139,9 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 
 	var tripId = req.params.tripId;
 
-	Cache.fetch(redisClient, `/agencies/${agencyId}/${tripId}/stop-times?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+	var fetchStart = Date.now();
+	var cacheKey = `/agencies/${agencyId}/${tripId}/stop-times?${qs.stringify(req.query)}`;
+	Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
 		db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
@@ -176,6 +178,7 @@ router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 		});
 
 	}).then((data) => {
+		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

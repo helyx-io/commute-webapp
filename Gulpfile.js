@@ -7,6 +7,13 @@ var gulp = require('gulp');
 var sourcemaps = require('gulp-sourcemaps');
 var traceur = require('gulp-traceur');
 var sass = require('gulp-sass');
+
+var usemin = require('gulp-usemin');
+var uglify = require('gulp-uglify');
+var minifyHtml = require('gulp-minify-html');
+var minifyCss = require('gulp-minify-css');
+var rev = require('gulp-rev');
+
 //var svgmin = require('gulp-svgmin');
 
 
@@ -29,6 +36,16 @@ gulp.task('copy-public', function () {
 
 gulp.task('copy-public-html', function () {
 	return gulp.src('public/**/*.html')
+		.pipe(gulp.dest('build/public'));
+});
+
+gulp.task('usemin-public-html', function () {
+	return gulp.src('public/index.html')
+		.pipe(usemin({
+			css: [minifyCss(), 'concat'],
+			html: [minifyHtml({empty: true})],
+			js: [uglify(), rev()]
+		}))
 		.pipe(gulp.dest('build/public'));
 });
 
@@ -93,4 +110,4 @@ gulp.task('watch-public-svg', function() {
 gulp.task('watch', ['watch-sass', 'watch-views', 'watch-public-scripts']);
 
 // default gulp task
-gulp.task('default', ['build-sources', 'copy-public'/*, 'copy-public-svg'*/, 'copy-views', 'copy-project-resources', 'build-sass']);
+gulp.task('default', ['build-sources', 'copy-public'/*, 'copy-public-svg'*/, 'usemin-public-html', 'copy-views', 'copy-project-resources', 'build-sass']);

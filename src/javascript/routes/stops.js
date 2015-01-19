@@ -104,7 +104,9 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	var distance = req.query.distance;
 	var db = DB.schema(agencyId);
 
-	Cache.fetch(redisClient, `/agencies/${agencyId}/stops/nearest?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+	var fetchStart = Date.now();
+	var cacheKey = `/agencies/${agencyId}/stops/nearest?${qs.stringify(req.query)}`;
+	Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 		// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
 		db.Stops.query( (q) => {
@@ -138,6 +140,7 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 		});
 
 	}).then((data) => {
+		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

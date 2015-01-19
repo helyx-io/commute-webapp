@@ -100,7 +100,9 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 
 	var stopId = req.params.stopId;
 
-	Cache.fetch(redisClient, `/agencies/${agencyId}/${stopId}/${date}?${qs.stringify(req.query)}`).otherwhise({ expiry: 3600 }, (callback) => {
+	var fetchStart = Date.now();
+	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}?${qs.stringify(req.query)}`;
+	Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
 		var query = db.knex
@@ -133,6 +135,7 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 		});
 
 	}).then((data) => {
+		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		res.json(format(data));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
