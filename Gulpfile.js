@@ -13,6 +13,11 @@ var uglify = require('gulp-uglify');
 var minifyHtml = require('gulp-minify-html');
 var minifyCss = require('gulp-minify-css');
 var rev = require('gulp-rev');
+var notify = require('gulp-notify');
+var ngAnnotate = require('gulp-ng-annotate');
+var rename = require('gulp-rename');
+
+var runSequence = require('run-sequence');
 
 //var svgmin = require('gulp-svgmin');
 
@@ -42,12 +47,35 @@ gulp.task('copy-public-html', function () {
 gulp.task('usemin-public-html', function () {
 	return gulp.src('public/index.html')
 		.pipe(usemin({
-			css: [minifyCss(), 'concat'],
+			css: [minifyCss(), 'concat', rev(), rename({ extname: ".min.css" })],
+			app_css: [minifyCss(), 'concat', rev(), rename({ extname: ".min.css" })],
 			html: [minifyHtml({empty: true})],
-			js: [uglify(), rev()]
+			js: [uglify(), 'concat', rev(), rename({ extname: ".min.js" })],
+			app_js: [ngAnnotate(), uglify(), rev(), rename({ extname: ".min.js" })]
 		}))
 		.pipe(gulp.dest('build/public'));
 });
+
+
+gulp.task('mondernizr-min', function () {
+	return gulp.src('public/bower_components/modernizr/modernizr.js')
+		.pipe(uglify())
+		.pipe(rename({ extname: ".min.js" }))
+		.pipe(gulp.dest('public/bower_components/modernizr/'));
+});
+
+//
+//gulp.task('ng-annotate-public-scripts', function () {
+//	return gulp.src('public/scripts/*.js')
+//		.pipe(ngAnnotate())
+//		.on('error', notify.onError("Error: <%= error.message %>"))
+//		.pipe(uglify())
+//		.on('error', notify.onError("Error: <%= error.message %>"))
+//		.pipe(rev())
+//		.on('error', notify.onError("Error: <%= error.message %>"))
+//		.pipe(rename({ extname: ".min.js" }))
+//		.pipe(gulp.dest('build/public/scripts'));
+//});
 
 gulp.task('copy-public-styles', function () {
 	return gulp.src('public/styles/**/*.css')
@@ -77,10 +105,13 @@ gulp.task('copy-project-resources', function () {
 
 gulp.task('build-sass', function () {
 	gulp.src('src/sass/**/*.scss')
-		.pipe(sourcemaps.init())
-		.pipe(sass())
-		.pipe(sourcemaps.write())
-		.pipe(gulp.dest('build/public/styles'));
+		//.pipe(sourcemaps.init())
+		.pipe(sass({
+			includePaths: [ 'src/sass/partials' ],
+			outputStyle: 'expanded'
+		}))
+		//.pipe(sourcemaps.write())
+		.pipe(gulp.dest('public/styles'));
 });
 
 gulp.task('watch-sass', function() {
@@ -110,4 +141,12 @@ gulp.task('watch-public-svg', function() {
 gulp.task('watch', ['watch-sass', 'watch-views', 'watch-public-scripts']);
 
 // default gulp task
-gulp.task('default', ['build-sources', 'copy-public'/*, 'copy-public-svg'*/, 'usemin-public-html', 'copy-views', 'copy-project-resources', 'build-sass']);
+gulp.task('default',
+	function(callback) {
+		runSequence(
+			['build-sources', 'build-sass', 'mondernizr-min', 'copy-views', 'copy-project-resources'],
+			'copy-public',
+			'usemin-public-html',
+			callback
+		);
+	});

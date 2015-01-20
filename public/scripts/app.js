@@ -463,25 +463,25 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 
 	var config = Globals.config;
 
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Map Init
+	////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	var position = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
+
+	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: position });
+
+	$rootScope.$on('redrawMapEvent', function() {
+		google.maps.event.trigger(map,'resize')
+	});
+
+	google.maps.event.addDomListener(window, 'load', $scope.initialize);
+
 	$scope.initialize = function() {
 
 		StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
 
 			$scope.stops = stops;
-
-
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/// Map Init
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			var position = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
-
-			var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: position });
-
-			$rootScope.$on('redrawMapEvent', function() {
-				google.maps.event.trigger(map,'resize')
-			});
-
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 			/// Position Marker
@@ -507,5 +507,4 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 
 	};
 
-	google.maps.event.addDomListener(window, 'load', $scope.initialize);
 });
