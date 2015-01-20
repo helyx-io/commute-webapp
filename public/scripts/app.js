@@ -5,7 +5,7 @@ $(document).foundation();
 /// Application
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var gtfsApp = angular.module('gtfsApp', ['ngAnimate', 'mwl.bluebird']);
+var gtfsApp = angular.module('gtfsApp', [/*'ngAnimate', 'mwl.bluebird'*/]);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -411,25 +411,7 @@ gtfsApp.controller('StopsController', function($scope, Globals, $q, StopService,
 	var config = Globals.config;
 
 	StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
-
-		var stopTimesPromises = stops.map(function(stop) {
-			return LineService.fetchStopTimes(config.dataset, stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
-				lines.forEach(function(line) {
-					if (line.stop_times.length > 0) {
-						line.trip_id = line.stop_times[0].trip_id;
-						line.route_color = line.stop_times[0].route_color;
-						line.route_text_color = line.stop_times[0].route_text_color;
-					}
-				});
-
-				stop.lines = lines;
-			});
-		});
-
-		$q.all(stopTimesPromises);
-
 		$scope.stops = stops;
-
 	}).catch(function(err) {
 		console.log(err);
 	});
@@ -438,6 +420,19 @@ gtfsApp.controller('StopsController', function($scope, Globals, $q, StopService,
 
 gtfsApp.controller('StopController', function($scope, Globals, LineService) {
 
+	var config = Globals.config;
+
+	LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
+		lines.forEach(function(line) {
+			if (line.stop_times.length > 0) {
+				line.trip_id = line.stop_times[0].trip_id;
+				line.route_color = line.stop_times[0].route_color;
+				line.route_text_color = line.stop_times[0].route_text_color;
+			}
+		});
+
+		$scope.stop.lines = lines;
+	});
 });
 
 gtfsApp.controller('StopLinesController', function($scope) {
@@ -475,8 +470,6 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 		google.maps.event.trigger(map,'resize')
 	});
 
-	google.maps.event.addDomListener(window, 'load', $scope.initialize);
-
 	$scope.initialize = function() {
 
 		StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
@@ -506,5 +499,7 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 		});
 
 	};
+
+	google.maps.event.addDomListener(window, 'load', $scope.initialize);
 
 });
