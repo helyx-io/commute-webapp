@@ -29,31 +29,31 @@ function inherits(childCtor, parentCtor) {
 
 gtfsApp.factory('Globals', function() {
 
-//        var config = { // St-Maurice
-//            dataset: 'RATP_GTFS_FULL',
-//            date: '2014-12-20' +
-//            '', // moment().format("YYYY-MM-DD")
-//            geo: {
-//                lat: 48.814593,
-//                lon: 2.4586253
-//            },
-//            distance: 1000,
-//            locations: 1,
-//            ignoreDay: 1
-//        };
+        var config = { // St-Maurice
+            dataset: 'RATP_GTFS_FULL',
+            date: '2014-12-20' +
+            '', // moment().format("YYYY-MM-DD")
+            geo: {
+                lat: 48.814593,
+                lon: 2.4586253
+            },
+            distance: 1000,
+            locations: 1,
+            ignoreDay: 1
+        };
 
-	var config = { // Renne
-		dataset: 'STAR_GTFS_RENNES',
-		date: '2015-01-15', // moment().format("YYYY-MM-DD")
-		geo: {
-			lat: 48.1089,
-			lon: -1.47798
-		},
-		distance: 1000,
-		locations: 1,
-		ignoreDay: 0,
-		stopId: '4152'
-	};
+	//var config = { // Renne
+	//	dataset: 'STAR_GTFS_RENNES',
+	//	date: '2015-01-15', // moment().format("YYYY-MM-DD")
+	//	geo: {
+	//		lat: 48.1089,
+	//		lon: -1.47798
+	//	},
+	//	distance: 1000,
+	//	locations: 1,
+	//	ignoreDay: 0,
+	//	stopId: '4152'
+	//};
 
 	return {
 		baseURL: location.hostname == 'localhost' ? 'http://localhost:9000' : 'http://gtfs.helyx.io',
@@ -108,7 +108,7 @@ gtfsApp.factory('CalendarService', function($http, $q, Globals) {
 gtfsApp.factory('StopService', function($http, $q, Globals) {
 	var stopService = { };
 
-	stopService.fetchStops = function(dataset, lat, lon, distance, locations) {
+	stopService.fetchNearestStops = function(dataset, lat, lon, distance, locations) {
 
 		if (stopService.stops) {
 			var defer = $q.defer();
@@ -389,7 +389,7 @@ gtfsApp.controller('SidebarStopsController', function($scope, $http, Globals, St
 
 	var config = Globals.config;
 
-	StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+	StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
 		$scope.stops = stops;
 
 		$scope.stops.forEach(function (stop, index) {
@@ -404,13 +404,13 @@ gtfsApp.controller('SidebarStopsController', function($scope, $http, Globals, St
 
 });
 
-gtfsApp.controller('StopsController', function($scope, Globals, $q, StopService, LineService) {
+gtfsApp.controller('StopsController', function($scope, Globals, $q, StopService) {
 
 	$scope.stops = [];
 
 	var config = Globals.config;
 
-	StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+	StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
 		$scope.stops = stops;
 	}).catch(function(err) {
 		console.log(err);
@@ -432,6 +432,8 @@ gtfsApp.controller('StopController', function($scope, Globals, LineService) {
 		});
 
 		$scope.stop.lines = lines;
+	}).catch(function(err) {
+		console.log(err);
 	});
 });
 
@@ -444,8 +446,8 @@ gtfsApp.controller('StopLineController', function($scope, Globals, TripService) 
 	var config = Globals.config;
 
 	TripService.fetchStopTimes(config.dataset, $scope.line.trip_id).then(function(stopTimes) {
-		$scope.line.first_stop = stopTimes[0].stop;
-		$scope.line.last_stop = stopTimes[stopTimes.length - 1].stop;
+		$scope.line.first_stop = stopTimes.length > 0 ? stopTimes[0].stop : null;
+		$scope.line.last_stop = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop : null;
 	}).catch(function(err) {
 		console.log(err);
 	});
@@ -462,17 +464,40 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 	/// Map Init
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	var position = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
+	var defaultPosition = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
 
-	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: position });
+	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: defaultPosition });
 
 	$rootScope.$on('redrawMapEvent', function() {
-		google.maps.event.trigger(map,'resize')
+		google.maps.event.trigger(map,'resize');
 	});
 
 	$scope.initialize = function() {
+		if (Modernizr.geolocation) {
+			var geoLocationOptions = { enableHighAccuracy: false, maximumAge: 75000 };
+			navigator.geolocation.getCurrentPosition($scope.onGeoLocationSuccess, $scope.onGeoLocationError, geoLocationOptions);
+		}
+		else {
+			$scope.initializeMap();
+		}
+	};
 
-		StopService.fetchStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+	$scope.onGeoLocationSuccess = function(position) {
+		$scope.initializeMap(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+	};
+
+	$scope.onGeoLocationError = function handle_error(err) {
+		if (err.code == 1) {
+			console.log("User refused acces to geolocation");
+		}
+		else {
+			console.log("GeoLocation Error: " + JSON.stringify(err));
+		}
+	};
+
+	$scope.initializeMap = function(position) {
+
+		StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
 
 			$scope.stops = stops;
 
@@ -480,7 +505,10 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 			/// Position Marker
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			var positionMarker = new google.maps.PositionMarker($scope, map, position);
+			position = position ? position : defaultPosition;
+
+			map.panTo(position);
+			var positionMarker = new google.maps.PositionMarker($scope, map, position ? position : defaultPosition);
 
 			positionMarker.show();
 
