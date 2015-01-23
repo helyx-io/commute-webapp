@@ -23,7 +23,7 @@ var stopTimes = require('./stopTimes');
 var stopTimesFull = require('./stopTimesFull');
 var trips = require('./trips');
 
-var DB = require('../lib/db');
+var agencyService = require('../service/agencyService');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -75,11 +75,7 @@ router.use('/:agencyId/trips', trips);
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-	var db = DB.schema('gtfs');
-
-	db.Agencies.query( (q) => q ).fetch().then((agencies) => {
-
-		agencies = agencies.toJSON();
+	agencyService.findAgencies().then((agencies) => {
 
 		agencies.forEach((agency) => {
 
@@ -124,16 +120,13 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 router.get('/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
-	var db = DB.schema('gtfs');
 
-	new db.Agency({ agency_id: agencyId }).fetch().then((agency) => {
+	agencyService.findAgencyById(agencyId).then((agency) => {
 
 		if (!agency) {
 			res.status(404).end();
 		}
 		else {
-			var agency = agency.toJSON();
-
 			agency.links = [{
 				"href": `${baseApiURL(req)}/agencies`,
 				"rel": "http://gtfs.helyx.io/api/agencies",

@@ -3,27 +3,18 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 var fs = require('fs');
-
+var util = require('util');
 var qs = require('querystring');
 
 var express = require('express');
 var passport = require('passport');
-
 var moment = require('moment');
-
-var util = require('util');
 
 var security = require('../lib/security');
 
 var logger = require('../log/logger');
 
-var _ = require('lodash');
-
-var DB = require('../lib/db');
-
-
-var redisClient = require('redis').createClient();
-var Cache = require("../lib/cache");
+var tripService = require('../service/tripService');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -67,11 +58,8 @@ var router = express.Router({mergeParams: true});
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
 
-	db.TripServices.query( (q) => q ).fetch().then((trips) => {
-
-		trips = trips.toJSON();
+	tripService.findTrips(agencyId).then((trips) => {
 
 		trips.forEach((trip) => {
 
@@ -100,18 +88,15 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 router.get('/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
 
 	var tripId = req.params.tripId;
 
-	new db.TripService({ trip_id: tripId }).fetch().then((trip) => {
+	tripService.findByTripId(tripId).then((trip) => {
 
 		if (!trip) {
 			res.status(404).end();
 		}
 		else {
-			trip = trip.toJSON();
-
 			trip.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${trip.route_id}`,
 				"rel": "http://gtfs.helyx.io/api/route",
@@ -135,51 +120,33 @@ router.get('/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
-
 	var tripId = req.params.tripId;
 
-	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/${tripId}/stop-times?${qs.stringify(req.query)}`;
-	Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
-		var start = Date.now();
+	tripService.findStopTimesByTripId(agencyId, tripId).then((stopTimes) => {
 
-		db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
-			logger.info(`DB Query Done in ${Date.now() - start} ms`);
+		stopTimes.forEach((stopTime) => {
 
-			stopTimes = stopTimes.toJSON();
+			stopTime.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
+				"rel": "http://gtfs.helyx.io/api/trip",
+				"title": `Trip '${tripId}'`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
+				"rel": "http://gtfs.helyx.io/api/stop-time",
+				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
+			}];
 
-			stopTimes.sort(function(st1, st2) {
-				return st1.stop_sequence - st2.stop_sequence
-			});
-
-			stopTimes.forEach((stopTime) => {
-
-				stopTime.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${tripId}`,
-					"rel": "http://gtfs.helyx.io/api/trip",
-					"title": `Trip '${tripId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop-time",
-					"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.stop.departure_time}']`
+			if (stopTime.stop) {
+				stopTime.stop.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+					"rel": "http://gtfs.helyx.io/api/stop",
+					"title": `Stop '${stopTime.stop_id}'`
 				}];
-
-				if (stopTime.stop) {
-					stopTime.stop.links = [{
-						"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
-						"rel": "http://gtfs.helyx.io/api/stop",
-						"title": `Stop '${stopTime.stop_id}'`
-					}];
-				}
-			});
-
-			callback(undefined, format(stopTimes));
+			}
 		});
 
-	}).then((data) => {
-		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
-		res.json(format(data));
+		res.json(format(stopTimes));
+
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});
