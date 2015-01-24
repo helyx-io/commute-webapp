@@ -18,6 +18,7 @@ var ngAnnotate = require('gulp-ng-annotate');
 var rename = require('gulp-rename');
 
 var runSequence = require('run-sequence');
+var debug = require('gulp-debug');
 
 //var svgmin = require('gulp-svgmin');
 
@@ -105,13 +106,10 @@ gulp.task('copy-project-resources', function () {
 
 gulp.task('build-sass', function () {
 	gulp.src('src/sass/**/*.scss')
-		//.pipe(sourcemaps.init())
 		.pipe(sass({
-			includePaths: [ 'src/sass/partials' ],
 			outputStyle: 'expanded'
 		}))
-		//.pipe(sourcemaps.write())
-		.pipe(gulp.dest('public/styles'));
+		.pipe(gulp.dest('build/public/styles'));
 });
 
 gulp.task('watch-sass', function() {

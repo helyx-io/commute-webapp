@@ -62,6 +62,16 @@ var formatAsStopTimeFull = (data) => {
 		});
 	}
 	else {
+		data.stop_times = data.stop_times.map((stopTime) =>{
+			return {
+				trip_id: stopTime.trip_id,
+				route_color: stopTime.route_color,
+				route_text_color: stopTime.route_text_color,
+				departure_time: stopTime.departure_time,
+				arrival_time: stopTime.arrival_time
+			};
+		});
+
 		return data;
 	}
 };
@@ -78,9 +88,8 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 	var agencyId = req.params.agencyId;
 	var stopId = req.params.stopId;
 	var date = req.params.date;
-	var ignoreDay = req.query.ignoreDay;
 
-	stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date, ignoreDay).then((data) => {
+	stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date).then((data) => {
 		res.json(format(formatAsStopTimeFull(data)));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

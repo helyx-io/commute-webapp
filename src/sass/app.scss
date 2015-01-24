@@ -91,7 +91,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-
 #sidebar-right {
   position: absolute;
   top: 0px;
@@ -120,7 +119,6 @@ h1, h2, h3, h4, h5, h6 {
   height: 32px;
   margin: 0;
   padding: 0;
-  background: red;
 }
 
 #map {
@@ -137,13 +135,13 @@ h1, h2, h3, h4, h5, h6 {
   height: 100%;
 
   img {
-    max-width:none;
+    max-width: none;
   }
 }
 
 #settings {
   float: right;
-  height:50px;
+  height: 50px;
   text-align: right;
 
   button {
@@ -173,7 +171,6 @@ h1, h2, h3, h4, h5, h6 {
   background: #005673;
 }
 
-
 #sidebar-calendar {
   margin: 0px;
 
@@ -181,6 +178,7 @@ h1, h2, h3, h4, h5, h6 {
     margin: 10px 10px 0px 30px;
   }
 }
+
 #sidebar-stops {
   margin: 0px;
 
@@ -321,7 +319,6 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-
 #footer {
   margin: 0px 0px;
   background: #007095;
@@ -334,7 +331,6 @@ h1, h2, h3, h4, h5, h6 {
     padding: 5px 10px;
   }
 }
-
 
 #stops {
   padding: 0px;
@@ -350,7 +346,7 @@ h1, h2, h3, h4, h5, h6 {
 
   h2 {
     margin: 5px 10px 0px 10px;
-    font-size: 1.5em;
+    font-size: 1.2em;
     color: #222222;
   }
 
@@ -370,10 +366,16 @@ h1, h2, h3, h4, h5, h6 {
   background: #e9e9e9;
   margin: 0px;
   padding: 2px 0px;
+  cursor: pointer;
 
   aside {
     float: right;
+    font-size: 0.9em;
     margin: 5px 10px;
+  }
+
+  &:hover {
+    background: #d1d1d1;
   }
 }
 

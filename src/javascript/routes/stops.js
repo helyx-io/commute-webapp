@@ -121,24 +121,9 @@ router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => 
 	var lon = req.query.lon;
 	var distance = req.query.distance;
 	var date = req.params.date;
-	var ignoreDay = req.query.ignoreDay;
 
-	stopService.findNearestStopsByDate(agencyId, lat, lon, distance, date, ignoreDay).then((stops) => {
-		if (withLinks(req)) {
-			stops.forEach((stop) => {
-				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
-					"rel": "http://gtfs.helyx.io/api/agency",
-					"title": `Agency '${agencyId}'`
-				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
-					"rel": "http://gtfs.helyx.io/api/stop",
-					"title": `Stop '${stop.stop_id}'`
-				}];
-			});
-		}
-
-		res.json(format(stops));
+	stopService.findNearestStopsByDate(agencyId, lat, lon, distance, date).then((stops) => {
+		res.json(stops);
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
 		res.status(500).json({message: err.message});

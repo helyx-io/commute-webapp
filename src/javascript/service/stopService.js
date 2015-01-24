@@ -5,6 +5,8 @@
 var fs = require('fs');
 var util = require('util');
 
+var _ = require('lodash');
+
 var logger = require('../log/logger');
 var DB = require('../lib/db');
 
@@ -57,11 +59,12 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 };
 
 
-var findNearestStopsByDate = (agencyId, lat, lon, distance, date, ignoreDay) => {
+var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 
 	return findNearestStops(agencyId, lat, lon, distance).then((stops) => {
+
 		return Promise.all(stops.map((stop) => {
-			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stop.stop_id, date, ignoreDay).then((lines) => {
+			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stop.stop_id, date).then((lines) => {
 				lines.forEach((line) => {
 					if (line.stop_times.length > 0) {
 						line.trip_id = line.stop_times[0].trip_id;
@@ -70,10 +73,19 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date, ignoreDay) => 
 					}
 				});
 
+				lines.forEach(function(line) {
+					line.stop_times = line.stop_times.map(function(stopTime) {
+						return {
+							departure_time: stopTime.departure_time,
+							arrival_time: stopTime.arrival_time
+						};
+					});
+				});
+
 				return Promise.all(lines.map((line) => {
 					return tripService.findStopTimesByTripId(agencyId, line.trip_id).then((stopTimes) => {
-						line.first_stop = stopTimes.length > 0 ? stopTimes[0].stop : null;
-						line.last_stop = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop : null;
+						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name : null;
+						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name : null;
 
 						return line;
 					});
@@ -83,7 +95,24 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date, ignoreDay) => 
 					return stop;
 				});
 			});
-		}));
+		})).then(function(stops) {
+			return _.values(_.groupBy(stops, function(stop) {
+				return stop.stop_name + stop.stop_desc + stop.location_type;
+			})).map(function(stops) {
+				return {
+					name: stops[0].stop_name,
+					desc: stops[0].stop_desc,
+					distance: stops[0].stop_distance,
+					location_type: stops[0].location_type,
+					geo_location: {
+						lat: stops[0].stop_lat,
+						lon: stops[0].stop_lon
+					},
+					stops: _.pluck(stops, 'stop_id'),
+					lines: _.flatten(_.pluck(stops, 'lines'))
+				};
+			});
+		});
 	});
 };
 

@@ -95,8 +95,7 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 0px;
   height: 32px;
   margin: 0;
-  padding: 0;
-  background: red; }
+  padding: 0; }
 
 #map {
   margin: 0px;
@@ -267,6 +266,8 @@ h1, h2, h3, h4, h5, h6 {
   .stop-title aside {
     float: right;
     margin: 5px 10px; }
+  .stop-title:hover {
+    background: red; }
 
 .stop-content {
   margin: 0px; }

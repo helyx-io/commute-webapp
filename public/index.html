@@ -79,18 +79,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div id="sidebar-stops-container" ng-cloak ng-controller="SidebarStopsController">
-                    <div id="sidebar-stops">
-                        <h1>Stops</h1>
-                        <div id="sidebar-stops-content">
-                            <div id="sidebar-stop-row-{{index}}" ng-repeat="stop in stops" class="sidebar-stop {{stop._class}}">
-                                <h4>{{stop.stop_name}} ({{stop.stop_id}})</h4>
-                                <h5>{{stop.stop_desc}}</h5>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -105,17 +93,17 @@
             <div id="sidebar-right-content" ng-show="showRightSidebar">
                 <div id="stops" ng-cloak ng-controller="StopsController">
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
-                        <div class="stop-title">
-                            <aside>{{(stop.stop_distance / 1000).toFixed(3)}} km</aside>
-                            <h2>{{stop.stop_name}} ({{stop.stop_id}})</h2>
-                            <h3>{{stop.stop_desc}} - <a href="{{stop.stop_loc_link}}" target="blank">Map</a></h3>
+                        <div class="stop-title" ng-click="stopSelect()">
+                            <aside>{{(stop.distance / 1000).toFixed(3)}} km</aside>
+                            <h2>{{stop.name}}</h2>
+                            <h3>{{stop.desc}} - <a href="" target="blank">Map</a></h3>
                         </div>
                         <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
                             <div class="line" ng-repeat="line in stop.lines" ng-controller="StopLineController">
                                 <div class="line-title">
                                     <aside style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
-                                    <h3>{{line.first_stop.stop_name}}</h3>
-                                    <h4>{{line.last_stop.stop_name}}</h4>
+                                    <h3>{{line.first_stop_name}}</h3>
+                                    <h4>{{line.last_stop_name}}</h4>
                                 </div>
                                 <div class="line-content">
                                     <ul class="stop-times">

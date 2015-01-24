@@ -5,8 +5,9 @@
 var fs = require('fs');
 var util = require('util');
 
-var moment = require('moment');
 var _ = require('lodash');
+var moment = require('moment');
+var Promise = require('bluebird');
 
 var logger = require('../log/logger');
 var DB = require('../lib/db');
@@ -38,33 +39,37 @@ var dayOfWeekAsString = (day) => {
 // Functions
 ////////////////////////////////////////////////////////////////////////////////////
 
-var findLinesByStopIdAndDate = (agencyId, stopId, date, ignoreDay) => {
+var findLinesByStopIdAndDate = (agencyId, stopId, date) => {
 
 	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
 
 	var db = DB.schema(agencyId);
 
 	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}?ignoreDay=${ignoreDay}`;
+	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
-		var query = db.knex
-			.select('*')
+		var queryCalendar = db.knex
+			.select('stop_times_full.*')
 			.from('stop_times_full')
 			.innerJoin('calendars', 'stop_times_full.service_id', 'calendars.service_id')
 			.where({ stop_id: stopId })
 			.andWhere('start_date', '<=', date)
-			.andWhere('end_date', '>=', date);
+			.andWhere('end_date', '>=', date)
+			.andWhere(dayOfWeek, 1);
 
-		if (ignoreDay != 1) {
-			query.andWhere(dayOfWeek, 1);
-		}
+		var queryCalendarDates = db.knex
+			.select('stop_times_full.*')
+			.from('stop_times_full')
+			.innerJoin('calendar_dates', 'stop_times_full.service_id', 'calendar_dates.service_id')
+			.where({ stop_id: stopId })
+			.andWhere('date', '=', date);
 
-		query.orderBy('arrival_time');
+		Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
 
-		query.then((stopTimesFull) => {
+			var stopTimesFull = _.union(stopTimesFullCalendar, stopTimesFullCalendarDates);
 
 			if (!stopTimesFull) {
 				callback(undefined, []);

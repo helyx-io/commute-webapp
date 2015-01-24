@@ -34,14 +34,12 @@ gtfsApp.factory('Globals', function($rootScope) {
 		    dataset: 'RATP_GTFS_FULL',
 		    distance: 1000,
 	        center: { latitude: 48.814593, longitude: 2.4586253 },
-		    locations: 1,
-		    ignoreDay: 1
+		    locations: 1
 	    }, {
 		    dataset: 'STAR_GTFS_RENNES',
 		    distance: 1000,
 		    center: { latitude: 48.1089, longitude: -1.47798 },
 		    locations: 1,
-		    ignoreDay: 0,
 		    stopId: '4152'
 	    }
     ];
@@ -164,13 +162,17 @@ gtfsApp.factory('StopService', function($http, $q, Globals) {
 gtfsApp.factory('LineService', function($http, $q, Globals) {
 	var lineService = { };
 
-	lineService.fetchStopTimes = function(dataset, stopId, date, ignoreDay) {
+	lineService.fetchStopTimes = function(dataset, stopId, date) {
 		var defer = $q.defer();
 
-		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date + '?ignoreDay=' + ignoreDay;
+		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date;
 
-		$http.get(url).success(function (stopTimes, status, headers, config) {
-			defer.resolve(stopTimes);
+		$http.get(url).success(function (lines, status, headers, config) {
+			lines.forEach(function(line) {
+				line.stop_times = _.sortBy(line.stop_times, 'arrival_time');
+			});
+
+			defer.resolve(lines);
 		}).error(function (data, status, headers, config) {
 			defer.reject(new Error('HTTP error[' + status + ']'));
 		});
@@ -408,33 +410,6 @@ gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService
 	});
 });
 
-gtfsApp.controller('SidebarStopsController', function($rootScope, $scope, $http, Globals, StopService) {
-
-	$scope.stops = [];
-
-	$rootScope.$on('config', function(event) {
-		$scope.fetchNearestStops();
-	});
-
-	$scope.fetchNearestStops = function() {
-		var config = Globals.config;
-
-		StopService.fetchNearestStops(config.dataset, config.center.latitude, config.center.longitude, config.distance, config.locations).then(function(stops) {
-			$scope.stops = stops;
-
-			$scope.stops.forEach(function (stop, index) {
-				stop.index = index;
-				stop._class = stop.stop_id == config.stopId ? 'selected' : '';
-				stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
-			});
-
-		}).catch(function(err) {
-			console.log(err);
-		});
-	};
-
-});
-
 gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, StopService) {
 
 	$scope.stops = [];
@@ -461,7 +436,7 @@ gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineS
 	$scope.fetchStopTimes = function() {
 		var config = Globals.config;
 
-		LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, Globals.date, config.ignoreDay).then(function (lines) {
+		LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, Globals.date).then(function (lines) {
 			lines.forEach(function (line) {
 				if (line.stop_times.length > 0) {
 					line.trip_id = line.stop_times[0].trip_id;
@@ -474,6 +449,10 @@ gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineS
 		}).catch(function (err) {
 			console.log(err);
 		});
+	};
+
+	$scope.stopSelect = function() {
+		console.log("Stop selected: " + $scope.stop.stop_id);
 	};
 
 	$scope.fetchStopTimes();
@@ -568,7 +547,19 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 
 		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
 
-			$scope.stops = stops;
+			$scope.stops = _.values(_.groupBy(stops, function(stop) {
+				return stop.stop_name + stop.stop_desc + stop.location_type;
+			})).map(function(stops) {
+				return {
+					stop_name: stops[0].stop_name,
+					stop_desc: stops[0].stop_desc,
+					stop_geo: stops[0].stop_geo,
+					stop_distance: stops[0].stop_distance,
+					stop_lat: stops[0].stop_lat,
+					stop_lon: stops[0].stop_lon,
+					stop_ids: _.pluck(stops, 'stop_id')
+				};
+			});
 
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
