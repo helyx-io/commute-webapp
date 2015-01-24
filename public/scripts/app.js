@@ -27,38 +27,73 @@ function inherits(childCtor, parentCtor) {
 /// Factory
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-gtfsApp.factory('Globals', function() {
+gtfsApp.factory('Globals', function($rootScope) {
 
-        var config = { // St-Maurice
-            dataset: 'RATP_GTFS_FULL',
-            date: '2014-12-20' +
-            '', // moment().format("YYYY-MM-DD")
-            geo: {
-                lat: 48.814593,
-                lon: 2.4586253
-            },
-            distance: 1000,
-            locations: 1,
-            ignoreDay: 1
-        };
+    var availableConfigs = [
+	    {
+		    dataset: 'RATP_GTFS_FULL',
+		    distance: 1000,
+	        center: { latitude: 48.814593, longitude: 2.4586253 },
+		    locations: 1,
+		    ignoreDay: 1
+	    }, {
+		    dataset: 'STAR_GTFS_RENNES',
+		    distance: 1000,
+		    center: { latitude: 48.1089, longitude: -1.47798 },
+		    locations: 1,
+		    ignoreDay: 0,
+		    stopId: '4152'
+	    }
+    ];
 
-	//var config = { // Renne
-	//	dataset: 'STAR_GTFS_RENNES',
-	//	date: '2015-01-15', // moment().format("YYYY-MM-DD")
-	//	geo: {
-	//		lat: 48.1089,
-	//		lon: -1.47798
-	//	},
-	//	distance: 1000,
-	//	locations: 1,
-	//	ignoreDay: 0,
-	//	stopId: '4152'
-	//};
-
-	return {
-		baseURL: location.hostname == 'localhost' ? 'http://localhost:9000' : 'http://gtfs.helyx.io',
-		config: config
+	var globals =  {
+		date: moment().format("YYYY-MM-DD"),
+		baseURL: window.location.protocol + '//' + window.location.host,
+		availableConfigs: availableConfigs,
+		DEFAULT_CONFIG_KEY: 'RATP_GTFS_FULL'
 	};
+
+	globals.selectConfig = function(agencyKey) {
+		globals.config = _.find(availableConfigs, function(config) {
+			return config.dataset == agencyKey
+		});
+
+		if (!globals.position) {
+			globals.position = { coord: globals.config.center };
+		}
+
+		$rootScope.$broadcast('config', globals.config);
+	};
+
+	globals.setPosition = function(position) {
+		globals.position = position;
+
+		$rootScope.$broadcast('position', position);
+	};
+
+	console.log("Globals: " + JSON.stringify(globals));
+
+	return globals;
+});
+
+gtfsApp.factory('AgencyService', function($http, $q, Globals) {
+	var agencyService = {};
+
+	agencyService.findMatchingAgencyByPosition = function(position) {
+		var defer = $q.defer();
+
+		var url = Globals.baseURL + '/api/agencies/nearest?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude;
+
+		$http.get(url).success(function (agency, status, headers, config) {
+			defer.resolve(agency);
+		}).error(function (data, status, headers, config) {
+			defer.reject(new Error('HTTP error[' + status + ']'));
+		});
+
+		return defer.promise;
+	};
+
+	return agencyService;
 });
 
 gtfsApp.factory('CalendarService', function($http, $q, Globals) {
@@ -84,7 +119,7 @@ gtfsApp.factory('CalendarService', function($http, $q, Globals) {
 
 		// Make it comparable with other built dates
 		var today = moment(moment().format('YYYY-MM-DD'), 'YYYY-MM-DD');
-		var selectedDate = moment(Globals.config.date, 'YYYY-MM-DD');
+		var selectedDate = moment(Globals.date, 'YYYY-MM-DD');
 
 		var startOfCalendar = moment(today).add(-10, 'days');
 
@@ -110,27 +145,17 @@ gtfsApp.factory('StopService', function($http, $q, Globals) {
 
 	stopService.fetchNearestStops = function(dataset, lat, lon, distance, locations) {
 
-		if (stopService.stops) {
-			var defer = $q.defer();
-			defer.resolve(stopService.stops);
-			return defer.promise;
-		} else if (stopService.defer) {
-			return stopService.defer.promise;
-		}
-		else {
-			stopService.defer = $q.defer();
+		var defer = $q.defer();
 
-			var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
+		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
 
-			$http.get(url).success(function (stops, status, headers, config) {
-				stopService.stops = stops;
-				stopService.defer.resolve(stops);
-			}).error(function (data, status, headers, config) {
-				stopService.defer.reject(new Error('HTTP error[' + status + ']'));
-			});
-		}
+		$http.get(url).success(function (stops, status, headers, config) {
+			defer.resolve(stops);
+		}).error(function (data, status, headers, config) {
+			defer.reject(new Error('HTTP error[' + status + ']'));
+		});
 
-		return stopService.defer.promise;
+		return defer.promise;
 	};
 
 	return stopService;
@@ -329,7 +354,7 @@ gtfsApp.controller('AppController', function($rootScope, $scope, Globals) {
 });
 
 gtfsApp.controller('HeaderController', function($scope, Globals) {
-	$scope.date = moment(Globals.config.date, "YYYY-MM-DD").format("DD/MM/YYYY");
+	$scope.date = moment(Globals.date, "YYYY-MM-DD").format("DD/MM/YYYY");
 });
 
 gtfsApp.controller('SettingsController', function($scope, Globals) {
@@ -383,93 +408,132 @@ gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService
 	});
 });
 
-gtfsApp.controller('SidebarStopsController', function($scope, $http, Globals, StopService) {
+gtfsApp.controller('SidebarStopsController', function($rootScope, $scope, $http, Globals, StopService) {
 
 	$scope.stops = [];
 
-	var config = Globals.config;
-
-	StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
-		$scope.stops = stops;
-
-		$scope.stops.forEach(function (stop, index) {
-			stop.index = index;
-			stop._class = stop.stop_id == config.stopId ? 'selected' : '';
-			stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
-		});
-
-	}).catch(function(err) {
-		console.log(err);
+	$rootScope.$on('config', function(event) {
+		$scope.fetchNearestStops();
 	});
+
+	$scope.fetchNearestStops = function() {
+		var config = Globals.config;
+
+		StopService.fetchNearestStops(config.dataset, config.center.latitude, config.center.longitude, config.distance, config.locations).then(function(stops) {
+			$scope.stops = stops;
+
+			$scope.stops.forEach(function (stop, index) {
+				stop.index = index;
+				stop._class = stop.stop_id == config.stopId ? 'selected' : '';
+				stop.stop_loc_link = 'https://maps.google.com/maps?q=' + stop.stop_lat + ',' + stop.stop_lon
+			});
+
+		}).catch(function(err) {
+			console.log(err);
+		});
+	};
 
 });
 
-gtfsApp.controller('StopsController', function($scope, Globals, $q, StopService) {
+gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, StopService) {
 
 	$scope.stops = [];
 
-	var config = Globals.config;
-
-	StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
-		$scope.stops = stops;
-	}).catch(function(err) {
-		console.log(err);
+	$rootScope.$on('config', function(event) {
+		$scope.fetchNearestStops();
 	});
+
+	$scope.fetchNearestStops = function() {
+		var config = Globals.config;
+		var position = Globals.position;
+
+		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
+			$scope.stops = stops;
+		}).catch(function(err) {
+			console.log(err);
+		});
+	};
 
 });
 
-gtfsApp.controller('StopController', function($scope, Globals, LineService) {
+gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineService) {
 
-	var config = Globals.config;
+	$scope.fetchStopTimes = function() {
+		var config = Globals.config;
 
-	LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, config.date, config.ignoreDay).then(function(lines) {
-		lines.forEach(function(line) {
-			if (line.stop_times.length > 0) {
-				line.trip_id = line.stop_times[0].trip_id;
-				line.route_color = line.stop_times[0].route_color;
-				line.route_text_color = line.stop_times[0].route_text_color;
-			}
+		LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, Globals.date, config.ignoreDay).then(function (lines) {
+			lines.forEach(function (line) {
+				if (line.stop_times.length > 0) {
+					line.trip_id = line.stop_times[0].trip_id;
+					line.route_color = line.stop_times[0].route_color;
+					line.route_text_color = line.stop_times[0].route_text_color;
+				}
+			});
+
+			$scope.stop.lines = lines;
+		}).catch(function (err) {
+			console.log(err);
 		});
+	};
 
-		$scope.stop.lines = lines;
-	}).catch(function(err) {
-		console.log(err);
-	});
+	$scope.fetchStopTimes();
+
 });
 
 gtfsApp.controller('StopLinesController', function($scope) {
 
 });
 
-gtfsApp.controller('StopLineController', function($scope, Globals, TripService) {
+gtfsApp.controller('StopLineController', function($rootScope, $scope, Globals, TripService) {
 
-	var config = Globals.config;
+	$scope.fetchStopTimes = function() {
+		var config = Globals.config;
 
-	TripService.fetchStopTimes(config.dataset, $scope.line.trip_id).then(function(stopTimes) {
-		$scope.line.first_stop = stopTimes.length > 0 ? stopTimes[0].stop : null;
-		$scope.line.last_stop = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop : null;
-	}).catch(function(err) {
-		console.log(err);
+		TripService.fetchStopTimes(config.dataset, $scope.line.trip_id).then(function (stopTimes) {
+			$scope.line.first_stop = stopTimes.length > 0 ? stopTimes[0].stop : null;
+			$scope.line.last_stop = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop : null;
+		}).catch(function (err) {
+			console.log(err);
+		});
+	};
+
+
+	$scope.$watch('line', function(event) {
+		$scope.fetchStopTimes();
 	});
 
 });
 
-gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, StopService) {
+gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, AgencyService, StopService) {
 
 	$scope.stops = [];
 
 	var config = Globals.config;
 
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Map Init
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	var defaultPosition = new google.maps.LatLng(Globals.config.geo.lat, Globals.config.geo.lon);
+	var agencyCenter = Globals.availableConfigs[0].center;
+	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: { lat: agencyCenter.latitude, lng: agencyCenter.longitude } });
 
-	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: defaultPosition });
-
-	$rootScope.$on('redrawMapEvent', function() {
+	$rootScope.$on('redrawMapEvent', function(event) {
 		google.maps.event.trigger(map,'resize');
+	});
+
+	$rootScope.$on('position', function(event, position) {
+		AgencyService.findMatchingAgencyByPosition(position).then(function(agency) {
+			Globals.selectConfig(agency ? agency.agency_key : Globals.DEFAULT_CONFIG_KEY);
+		}).catch(function(err) {
+			console.log("Error:" + JSON.stringify(err));
+			Globals.selectConfig(Globals.DEFAULT_CONFIG_KEY);
+		});
+	});
+
+	$rootScope.$on('config', function(event) {
+		var position = Globals.position;
+		$scope.initializeMap(new google.maps.LatLng(position.latitude, position.longitude));
 	});
 
 	$scope.initialize = function() {
@@ -478,12 +542,12 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 			navigator.geolocation.getCurrentPosition($scope.onGeoLocationSuccess, $scope.onGeoLocationError, geoLocationOptions);
 		}
 		else {
-			$scope.initializeMap();
+			Global.setPosition(undefined);
 		}
 	};
 
 	$scope.onGeoLocationSuccess = function(position) {
-		$scope.initializeMap(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
+		Globals.setPosition(position);
 	};
 
 	$scope.onGeoLocationError = function handle_error(err) {
@@ -493,22 +557,26 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, St
 		else {
 			console.log("GeoLocation Error: " + JSON.stringify(err));
 		}
+
+		Globals.setPosition(undefined);
 	};
 
-	$scope.initializeMap = function(position) {
+	$scope.initializeMap = function() {
 
-		StopService.fetchNearestStops(config.dataset, config.geo.lat, config.geo.lon, config.distance, config.locations).then(function(stops) {
+		var position = Globals.position;
+		var config = Globals.config;
+
+		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
 
 			$scope.stops = stops;
+
 
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 			/// Position Marker
 			////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			position = position ? position : defaultPosition;
-
-			map.panTo(position);
-			var positionMarker = new google.maps.PositionMarker($scope, map, position ? position : defaultPosition);
+			map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
+			var positionMarker = new google.maps.PositionMarker($scope, map, { lat: position.coords.latitude, lng: position.coords.longitude });
 
 			positionMarker.show();
 

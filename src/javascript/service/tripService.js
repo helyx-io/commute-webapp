@@ -48,7 +48,7 @@ var findStopTimesByTripId = (agencyId, tripId) => {
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
-		db.StopTimes.query( (q) => q.where({trip_id: tripId}) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
+		db.StopTimes.query( (q) => q.where({ trip_id: tripId }) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
 			logger.info(`DB Query Done in ${Date.now() - start} ms`);
 
 			stopTimes = stopTimes.toJSON();
