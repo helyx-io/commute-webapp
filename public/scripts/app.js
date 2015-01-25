@@ -145,7 +145,7 @@ gtfsApp.factory('StopService', function($http, $q, Globals) {
 
 		var defer = $q.defer();
 
-		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
+		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/' + Globals.date + '/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
 
 		$http.get(url).success(function (stops, status, headers, config) {
 			defer.resolve(stops);
@@ -433,29 +433,9 @@ gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, 
 
 gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineService) {
 
-	$scope.fetchStopTimes = function() {
-		var config = Globals.config;
-
-		LineService.fetchStopTimes(config.dataset, $scope.stop.stop_id, Globals.date).then(function (lines) {
-			lines.forEach(function (line) {
-				if (line.stop_times.length > 0) {
-					line.trip_id = line.stop_times[0].trip_id;
-					line.route_color = line.stop_times[0].route_color;
-					line.route_text_color = line.stop_times[0].route_text_color;
-				}
-			});
-
-			$scope.stop.lines = lines;
-		}).catch(function (err) {
-			console.log(err);
-		});
-	};
-
 	$scope.stopSelect = function() {
 		console.log("Stop selected: " + $scope.stop.stop_id);
 	};
-
-	$scope.fetchStopTimes();
 
 });
 
@@ -464,22 +444,6 @@ gtfsApp.controller('StopLinesController', function($scope) {
 });
 
 gtfsApp.controller('StopLineController', function($rootScope, $scope, Globals, TripService) {
-
-	$scope.fetchStopTimes = function() {
-		var config = Globals.config;
-
-		TripService.fetchStopTimes(config.dataset, $scope.line.trip_id).then(function (stopTimes) {
-			$scope.line.first_stop = stopTimes.length > 0 ? stopTimes[0].stop : null;
-			$scope.line.last_stop = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop : null;
-		}).catch(function (err) {
-			console.log(err);
-		});
-	};
-
-
-	$scope.$watch('line', function(event) {
-		$scope.fetchStopTimes();
-	});
 
 });
 

@@ -109,7 +109,7 @@ gulp.task('build-sass', function () {
 		.pipe(sass({
 			outputStyle: 'expanded'
 		}))
-		.pipe(gulp.dest('build/public/styles'));
+		.pipe(gulp.dest('public/styles'));
 });
 
 gulp.task('watch-sass', function() {
