@@ -12,9 +12,12 @@ var gtfsApp = angular.module('gtfsApp', [/*'ngAnimate', 'mwl.bluebird'*/]);
 /// Helper functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-function inherits(childCtor, parentCtor) {
-	childCtor.prototype = new parentCtor();
-	childCtor.prototype.constructor = childCtor;
+function inherits(ctor, superCtor) {
+	ctor.super_ = superCtor;
+	var TempCtor = function () {};
+	TempCtor.prototype = superCtor.prototype;
+	ctor.prototype = new TempCtor();
+	ctor.prototype.constructor = ctor;
 }
 
 
@@ -267,7 +270,8 @@ google.maps.PositionMarker = function($scope, map, position, options) {
 	this.setOptions({ position: position, map: map, title: options.title, icon: options.icon });
 
 	var self = this;
-	google.maps.event.addListener(this, 'click', function() {
+	console.log("Adding Click Listener to :" + (self.stop ? self.stop.name : self.stop));
+	google.maps.event.addListener(self, 'click', function() {
 		self.show();
 	});
 
