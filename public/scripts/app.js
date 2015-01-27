@@ -13,12 +13,7 @@ var gtfsApp = angular.module('gtfsApp', [/*'ngAnimate', 'mwl.bluebird'*/]);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 function inherits(childCtor, parentCtor) {
-	/* @constructor */
-	function tempCtor() {}
-	tempCtor.prototype = parentCtor.prototype;
-	childCtor.superClass_ = parentCtor.prototype;
-	childCtor.prototype = new tempCtor();
-	/* @override */
+	childCtor.prototype = new parentCtor();
 	childCtor.prototype.constructor = childCtor;
 }
 
@@ -29,20 +24,21 @@ function inherits(childCtor, parentCtor) {
 
 gtfsApp.factory('Globals', function($rootScope) {
 
-    var availableConfigs = [
-	    {
-		    dataset: 'RATP_GTFS_FULL',
-		    distance: 1000,
-	        center: { latitude: 48.814593, longitude: 2.4586253 },
-		    locations: 1
-	    }, {
-		    dataset: 'STAR_GTFS_RENNES',
-		    distance: 1000,
-		    center: { latitude: 48.1089, longitude: -1.47798 },
-		    locations: 1,
-		    stopId: '4152'
-	    }
-    ];
+	var availableConfigs = [
+		{
+			dataset: 'RATP_GTFS_FULL',
+			distance: 1000,
+			center: { latitude: 48.814593, longitude: 2.4586253 },
+			locations: 1
+		}, {
+			dataset: 'STAR_GTFS_RENNES',
+			distance: 1000,
+			center: { latitude: 48.1089, longitude: -1.47798 },
+			locations: 1,
+			stopId: '4152'
+		}
+	];
+
 
 	var globals =  {
 		date: moment().format("YYYY-MM-DD"),
@@ -50,6 +46,7 @@ gtfsApp.factory('Globals', function($rootScope) {
 		availableConfigs: availableConfigs,
 		DEFAULT_CONFIG_KEY: 'RATP_GTFS_FULL'
 	};
+
 
 	globals.selectConfig = function(agencyKey) {
 		globals.config = _.find(availableConfigs, function(config) {
@@ -63,16 +60,53 @@ gtfsApp.factory('Globals', function($rootScope) {
 		$rootScope.$broadcast('config', globals.config);
 	};
 
+
 	globals.setPosition = function(position) {
 		globals.position = position;
 
 		$rootScope.$broadcast('position', position);
 	};
 
+
 	console.log("Globals: " + JSON.stringify(globals));
+
 
 	return globals;
 });
+
+gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
+
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Root scope event listeners
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	$rootScope.$on('position', function(event, position) {
+		AgencyService.findMatchingAgencyByPosition(position).then(function(agency) {
+			Globals.selectConfig(agency ? agency.agency_key : Globals.DEFAULT_CONFIG_KEY);
+		}).catch(function(err) {
+			console.log("Error:" + JSON.stringify(err));
+			Globals.selectConfig(Globals.DEFAULT_CONFIG_KEY);
+		});
+	});
+
+
+	$rootScope.$on('config', function(event, config) {
+		var position = Globals.position;
+
+		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
+			$rootScope.$broadcast('stopsLoaded', stops);
+		}).catch(function(err) {
+			console.log(err);
+		});
+	});
+
+});
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// Services
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 gtfsApp.factory('AgencyService', function($http, $q, Globals) {
 	var agencyService = {};
@@ -80,13 +114,18 @@ gtfsApp.factory('AgencyService', function($http, $q, Globals) {
 	agencyService.findMatchingAgencyByPosition = function(position) {
 		var defer = $q.defer();
 
-		var url = Globals.baseURL + '/api/agencies/nearest?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude;
+		if (!position) {
+			defer.reject(new Error('Position is undefined'));
+		}
+		else {
+			var url = Globals.baseURL + '/api/agencies/nearest?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude;
 
-		$http.get(url).success(function (agency, status, headers, config) {
-			defer.resolve(agency);
-		}).error(function (data, status, headers, config) {
-			defer.reject(new Error('HTTP error[' + status + ']'));
-		});
+			$http.get(url).success(function (agency, status, headers, config) {
+				defer.resolve(agency);
+			}).error(function (data, status, headers, config) {
+				defer.reject(new Error('HTTP error[' + status + ']'));
+			});
+		}
 
 		return defer.promise;
 	};
@@ -296,17 +335,18 @@ google.maps.PositionMarker.prototype.address = function() {
 
 google.maps.StopMarker = function($scope, map, stop, options) {
 	this.stop = stop;
-	var stopPosition = new google.maps.LatLng(stop.stop_lat, stop.stop_lon);
+	var stopPosition = new google.maps.LatLng(stop.geo_location.lat, stop.geo_location.lon);
 
-	var options = { title: stop.stop_name, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' };
+	var options = { title: stop.name, icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png' };
 	google.maps.PositionMarker.apply(this, [$scope, map, stopPosition, options]);
 };
 
 inherits(google.maps.StopMarker, google.maps.PositionMarker);
 
-google.maps.StopMarker.legend = function() {
-	var distance = (stop.stop_distance / 1000).toFixed(3);
-	return '<b>' + stop.stop_name + '</b> - <i><small>' + distance + ' km</small></i>' + (stop.address ? '<br>' + stop.address : '');
+google.maps.StopMarker.prototype.legend = function() {
+	var stop = this.stop;
+	var distance = (stop.distance / 1000).toFixed(3);
+	return '<b>' + stop.name + '</b> - <i><small>' + distance + ' km</small></i>' + (this.address() ? '<br>' + this.address() : '');
 };
 
 
@@ -414,20 +454,9 @@ gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, 
 
 	$scope.stops = [];
 
-	$rootScope.$on('config', function(event) {
-		$scope.fetchNearestStops();
+	$rootScope.$on('stopsLoaded', function(event, stops) {
+		$scope.stops = stops;
 	});
-
-	$scope.fetchNearestStops = function() {
-		var config = Globals.config;
-		var position = Globals.position;
-
-		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
-			$scope.stops = stops;
-		}).catch(function(err) {
-			console.log(err);
-		});
-	};
 
 });
 
@@ -451,8 +480,6 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 
 	$scope.stops = [];
 
-	var config = Globals.config;
-
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Map Init
@@ -461,22 +488,35 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 	var agencyCenter = Globals.availableConfigs[0].center;
 	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: { lat: agencyCenter.latitude, lng: agencyCenter.longitude } });
 
+
 	$rootScope.$on('redrawMapEvent', function(event) {
 		google.maps.event.trigger(map,'resize');
 	});
 
-	$rootScope.$on('position', function(event, position) {
-		AgencyService.findMatchingAgencyByPosition(position).then(function(agency) {
-			Globals.selectConfig(agency ? agency.agency_key : Globals.DEFAULT_CONFIG_KEY);
-		}).catch(function(err) {
-			console.log("Error:" + JSON.stringify(err));
-			Globals.selectConfig(Globals.DEFAULT_CONFIG_KEY);
-		});
-	});
 
-	$rootScope.$on('config', function(event) {
+	$rootScope.$on('stopsLoaded', function(event, stops) {
+
+		$scope.stops = stops;
+
 		var position = Globals.position;
-		$scope.initializeMap(new google.maps.LatLng(position.latitude, position.longitude));
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Position Marker
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
+		var positionMarker = new google.maps.PositionMarker($scope, map, { lat: position.coords.latitude, lng: position.coords.longitude });
+
+		positionMarker.show();
+
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Stops Markers
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		$scope.stops.forEach(function(stop) {
+			new google.maps.StopMarker($scope, map, stop);
+		});
 	});
 
 	$scope.initialize = function() {
@@ -485,7 +525,7 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 			navigator.geolocation.getCurrentPosition($scope.onGeoLocationSuccess, $scope.onGeoLocationError, geoLocationOptions);
 		}
 		else {
-			Global.setPosition(undefined);
+			Globals.setPosition(undefined);
 		}
 	};
 
@@ -502,53 +542,6 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 		}
 
 		Globals.setPosition(undefined);
-	};
-
-	$scope.initializeMap = function() {
-
-		var position = Globals.position;
-		var config = Globals.config;
-
-		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
-
-			$scope.stops = _.values(_.groupBy(stops, function(stop) {
-				return stop.stop_name + stop.stop_desc + stop.location_type;
-			})).map(function(stops) {
-				return {
-					stop_name: stops[0].stop_name,
-					stop_desc: stops[0].stop_desc,
-					stop_geo: stops[0].stop_geo,
-					stop_distance: stops[0].stop_distance,
-					stop_lat: stops[0].stop_lat,
-					stop_lon: stops[0].stop_lon,
-					stop_ids: _.pluck(stops, 'stop_id')
-				};
-			});
-
-
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/// Position Marker
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
-			var positionMarker = new google.maps.PositionMarker($scope, map, { lat: position.coords.latitude, lng: position.coords.longitude });
-
-			positionMarker.show();
-
-
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-			/// Stops Markers
-			////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			$scope.stops.forEach(function(stop) {
-				new google.maps.StopMarker($scope, map, stop);
-			});
-
-
-		}).catch(function(err) {
-			console.log(err);
-		});
-
 	};
 
 	google.maps.event.addDomListener(window, 'load', $scope.initialize);

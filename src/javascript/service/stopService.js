@@ -108,7 +108,7 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 						lat: stops[0].stop_lat,
 						lon: stops[0].stop_lon
 					},
-					stops: _.pluck(stops, 'stop_id'),
+					stop_ids: _.pluck(stops, 'stop_id'),
 					lines: _.flatten(_.pluck(stops, 'lines'))
 				};
 			});
