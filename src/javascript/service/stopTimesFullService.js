@@ -48,7 +48,7 @@ var findLinesByStopIdAndDate = (agencyId, stopId, date) => {
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var start = Date.now();
 
 		var queryCalendar = db.knex

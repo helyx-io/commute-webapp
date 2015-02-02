@@ -13,7 +13,10 @@ var DB = require('../lib/db');
 var stopTimesFullService = require('../service/stopTimesFullService');
 var tripService = require('../service/tripService');
 
-var redisClient = require('redis').createClient();
+var redis = require('redis');
+redis.debug_mode = true;
+
+var redisClient = redis.createClient();
 var Cache = require("../lib/cache");
 
 
@@ -38,7 +41,7 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var start = Date.now();
 		// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
 		db.Stops.query( (q) => {

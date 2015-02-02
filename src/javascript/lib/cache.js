@@ -2,6 +2,8 @@ var Promise = require('bluebird');
 var util = require('util');
 var events = require('events');
 
+var logger = require('../log/logger');
+
 var fetch = (client, key) => {
 
 	var deferred = Promise.pending();
@@ -12,8 +14,10 @@ var fetch = (client, key) => {
 		innerDeferred.promise.then((collection) => {
 
 			// Resolve the deferred immediately, because we got the data directly from Redis.
-			deferred.resolve(JSON.parse(collection));
-
+			var start = Date.now();
+			var jsonColletion = JSON.parse(collection);
+			logger.info(`JSON Parse access Done in ${Date.now() - start} ms`);
+			deferred.resolve(jsonColletion);
 		}).catch(() => {
 
 			// When the developer has resolved the promise, we need to store the data in Redis
@@ -21,8 +25,11 @@ var fetch = (client, key) => {
 			deferred.promise.then((data) => {
 
 				// Store the data in Redis!
-				client.setex(key, options.expiry || 86400, JSON.stringify(data));
-
+				if (options.expiry) {
+					client.setex(key, options.expiry, data);
+				} else {
+					client.set(key, JSON.stringify(data));
+				}
 			});
 
 			// Invoke the developer defined callback to retrieve the data.
@@ -39,7 +46,9 @@ var fetch = (client, key) => {
 		});
 
 		// Fetch the content from the Redis server.
+		var start = Date.now();
 		client.get(key, (error, result) => {
+			logger.info(`Cache access Done in ${Date.now() - start} ms`);
 			deferred.cacheKey = key;
 			if (error || !result) {
 				// An error occurred or the result was empty, therefore we'll reject

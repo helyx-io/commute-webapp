@@ -45,7 +45,7 @@ var findStopTimesByTripId = (agencyId, tripId) => {
 
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/${tripId}/stop-times`;
-	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var start = Date.now();
 
 		db.StopTimes.query( (q) => q.where({ trip_id: tripId }) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
