@@ -14,7 +14,7 @@ var stopTimesFullService = require('../service/stopTimesFullService');
 var tripService = require('../service/tripService');
 
 var redis = require('redis');
-redis.debug_mode = true;
+// redis.debug_mode = true;
 
 var redisClient = redis.createClient();
 var Cache = require("../lib/cache");

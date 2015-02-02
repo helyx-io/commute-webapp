@@ -12,35 +12,39 @@ var fetch = (client, key) => {
 	deferred.otherwhise = (options, method) => {
 
 		innerDeferred.promise.then((collection) => {
-
-			// Resolve the deferred immediately, because we got the data directly from Redis.
-			var start = Date.now();
-			var jsonColletion = JSON.parse(collection);
-			logger.info(`JSON Parse access Done in ${Date.now() - start} ms`);
-			deferred.resolve(jsonColletion);
+			process.nextTick(() =>{
+				// Resolve the deferred immediately, because we got the data directly from Redis.
+				// var start = Date.now();
+				var jsonColletion = JSON.parse(collection);
+				// logger.info(`JSON Parse access Done in ${Date.now() - start} ms`);
+				deferred.resolve(jsonColletion);
+			});
 		}).catch(() => {
 
 			// When the developer has resolved the promise, we need to store the data in Redis
 			// for next time.
 			deferred.promise.then((data) => {
-
-				// Store the data in Redis!
-				if (options.expiry) {
-					client.setex(key, options.expiry, data);
-				} else {
-					client.set(key, JSON.stringify(data));
-				}
+				process.nextTick(() => {
+					// Store the data in Redis!
+					if (options.expiry) {
+						client.setex(key, options.expiry, data);
+					} else {
+						client.set(key, JSON.stringify(data));
+					}
+				});
 			});
 
-			// Invoke the developer defined callback to retrieve the data.
-			method((err, data) => {
-				if (err) {
-					deferred.reject(err);
-				}
-				else {
-					deferred.resolve(data);
-				}
+			process.nextTick(() => {
+				// Invoke the developer defined callback to retrieve the data.
+				method((err, data) => {
+					if (err) {
+						deferred.reject(err);
+					}
+					else {
+						deferred.resolve(data);
+					}
 
+				});
 			});
 
 		});

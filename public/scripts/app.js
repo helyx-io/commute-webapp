@@ -270,7 +270,6 @@ google.maps.PositionMarker = function($scope, map, position, options) {
 	this.setOptions({ position: position, map: map, title: options.title, icon: options.icon });
 
 	var self = this;
-	console.log("Adding Click Listener to :" + (self.stop ? self.stop.name : self.stop));
 	google.maps.event.addListener(self, 'click', function() {
 		self.show();
 	});
