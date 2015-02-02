@@ -38,7 +38,7 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 
 	var db = DB.schema(agencyId);
 
-	var fetchStart = Date.now();
+	// var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
@@ -60,7 +60,6 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 		return stops;
 	});
 };
-
 
 var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 
@@ -96,10 +95,10 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 					return stop;
 				});
 			});
-		})).then(function(stops) {
-			return _.values(_.groupBy(stops, function(stop) {
+		})).then((stops) => {
+			return _.values(_.groupBy(stops, (stop) => {
 				return stop.stop_name + stop.stop_desc + stop.location_type;
-			})).map(function(stops) {
+			})).map((stops) => {
 				return {
 					name: stops[0].stop_name,
 					desc: stops[0].stop_desc,

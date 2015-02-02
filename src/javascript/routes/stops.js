@@ -113,7 +113,6 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	});
 });
 
-
 router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
 	var agencyId = req.params.agencyId;

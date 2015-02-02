@@ -4,6 +4,8 @@ var events = require('events');
 
 var logger = require('../log/logger');
 
+var counter = 0;
+
 var fetch = (client, key) => {
 
 	var deferred = Promise.pending();
@@ -52,7 +54,7 @@ var fetch = (client, key) => {
 		// Fetch the content from the Redis server.
 		var start = Date.now();
 		client.get(key, (error, result) => {
-			logger.info(`Cache access Done in ${Date.now() - start} ms`);
+			logger.info(`[${++counter}] Cache access Done in ${Date.now() - start} ms`);
 			deferred.cacheKey = key;
 			if (error || !result) {
 				// An error occurred or the result was empty, therefore we'll reject

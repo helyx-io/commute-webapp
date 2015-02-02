@@ -51,6 +51,22 @@ gtfsApp.factory('Globals', function($rootScope) {
 	};
 
 
+	var urlParams = {};
+
+	(function () {
+		var match,
+			pl     = /\+/g,  // Regex for replacing addition symbol with a space
+			search = /([^&=]+)=?([^&]*)/g,
+			decode = function (s) { return decodeURIComponent(s.replace(pl, " ")); },
+			query  = window.location.search.substring(1);
+
+		while (match = search.exec(query))
+			urlParams[decode(match[1])] = decode(match[2]);
+	})();
+
+	globals.qsPosition = { coords: { latitude: Number(urlParams.lat), longitude: Number(urlParams.lon) } };
+
+
 	globals.selectConfig = function(agencyKey) {
 		globals.config = _.find(availableConfigs, function(config) {
 			return config.dataset == agencyKey
@@ -489,7 +505,8 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	var agencyCenter = Globals.availableConfigs[0].center;
-	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: { lat: agencyCenter.latitude, lng: agencyCenter.longitude } });
+	var mapCenter = Globals.qsPosition ? Globals.qsPosition.coords : agencyCenter;
+	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: { lat: mapCenter.latitude, lng: mapCenter.longitude } });
 
 
 	$rootScope.$on('redrawMapEvent', function(event) {
@@ -523,7 +540,10 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 	});
 
 	$scope.initialize = function() {
-		if (Modernizr.geolocation) {
+		if (Globals.qsPosition) {
+			Globals.setPosition(Globals.qsPosition);
+		}
+		else if (Modernizr.geolocation) {
 			var geoLocationOptions = { enableHighAccuracy: false, maximumAge: 75000 };
 			navigator.geolocation.getCurrentPosition($scope.onGeoLocationSuccess, $scope.onGeoLocationError, geoLocationOptions);
 		}
