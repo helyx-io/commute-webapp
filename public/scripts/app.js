@@ -64,8 +64,9 @@ gtfsApp.factory('Globals', function($rootScope) {
 			urlParams[decode(match[1])] = decode(match[2]);
 	})();
 
-	globals.qsPosition = { coords: { latitude: Number(urlParams.lat), longitude: Number(urlParams.lon) } };
-
+	if (urlParams.lat && urlParams.lon) {
+		globals.qsPosition = { coords: { latitude: Number(urlParams.lat), longitude: Number(urlParams.lon) } };
+	}
 
 	globals.selectConfig = function(agencyKey) {
 		globals.config = _.find(availableConfigs, function(config) {
