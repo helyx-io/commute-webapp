@@ -45,7 +45,7 @@
     "hogan-express": "^0.5.2",
     "jwt-simple": "^0.2.0",
     "knex": "^0.7.3",
-    "lodash": "^3.0.0",
+    "lodash": "^3.0.1",
     "mkdirp": "^0.5.0",
     "moment": "^2.9.0",
     "morgan": "~1.5.1",
