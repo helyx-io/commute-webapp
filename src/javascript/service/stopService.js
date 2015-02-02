@@ -14,7 +14,7 @@ var stopTimesFullService = require('../service/stopTimesFullService');
 var tripService = require('../service/tripService');
 
 var redis = require('redis');
-// redis.debug_mode = true;
+//redis.debug_mode = true;
 
 var redisClient = redis.createClient();
 var Cache = require("../lib/cache");
@@ -55,7 +55,7 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 			callback(undefined, stops);
 		});
 	}).then((stops) => {
-		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 
 		return stops;
 	});
@@ -74,10 +74,8 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 						line.route_color = line.stop_times[0].route_color;
 						line.route_text_color = line.stop_times[0].route_text_color;
 					}
-				});
 
-				lines.forEach(function(line) {
-					line.stop_times = line.stop_times.map(function(stopTime) {
+					line.stop_times = line.stop_times.map((stopTime) => {
 						return {
 							departure_time: stopTime.departure_time,
 							arrival_time: stopTime.arrival_time

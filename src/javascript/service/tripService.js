@@ -10,6 +10,7 @@ var DB = require('../lib/db');
 
 
 var redisClient = require('redis').createClient();
+
 var Cache = require("../lib/cache");
 
 
@@ -45,7 +46,7 @@ var findStopTimesByTripId = (agencyId, tripId) => {
 
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/${tripId}/stop-times`;
-	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
 		db.StopTimes.query( (q) => q.where({ trip_id: tripId }) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
@@ -61,7 +62,7 @@ var findStopTimesByTripId = (agencyId, tripId) => {
 		});
 
 	}).then((stopTimes) => {
-		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		return stopTimes;
 	});
 };

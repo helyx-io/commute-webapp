@@ -48,7 +48,7 @@ var findLinesByStopIdAndDate = (agencyId, stopId, date) => {
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 
 		var queryCalendar = db.knex
@@ -91,7 +91,7 @@ var findLinesByStopIdAndDate = (agencyId, stopId, date) => {
 		});
 
 	}).then((lines) => {
-		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		return lines;
 	});
 

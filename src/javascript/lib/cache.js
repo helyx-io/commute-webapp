@@ -27,7 +27,7 @@ var fetch = (client, key) => {
 				process.nextTick(() => {
 					// Store the data in Redis!
 					if (options.expiry) {
-						client.setex(key, options.expiry, data);
+						client.setex(key, options.expiry, JSON.stringify(data));
 					} else {
 						client.set(key, JSON.stringify(data));
 					}
