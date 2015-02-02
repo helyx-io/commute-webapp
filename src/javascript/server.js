@@ -7,22 +7,26 @@ var path = require('path');
 var favicon = require('serve-favicon');
 var session = require('express-session');
 var compression = require('compression');
+var responseTime = require('response-time');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
+
+var allowCrossDomain = require('./lib/allowCrossDomain');
+var requestLogger = require('./lib/requestLogger');
+
+var authMiddleware = require('./middlewares/authMiddleware');
+
 var role = require('./connect-roles-fixed');
+
 var routes = require('./routes/index');
 var auth = require('./routes/auth');
 var api = require('./routes/api');
 var pemClients = require('./routes/pemClients');
 var playground = require('./routes/playground');
 
-var authMiddleware = require('./middlewares/authMiddleware');
 var authService = require('./service/authService');
-
-var allowCrossDomain = require('./lib/allowCrossDomain');
-var requestLogger = require('./lib/requestLogger');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -72,6 +76,7 @@ role.setFailureHandler(authService.failureHandler);
 ////////////////////////////////////////////////////////////////////////////////////
 
 app.use(favicon(__dirname + '/public/favicon.ico'));
+app.use(responseTime());
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
