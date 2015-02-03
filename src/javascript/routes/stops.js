@@ -174,11 +174,11 @@ router.get('/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 			stopTime.links = [{
 				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
 				"rel": "http://gtfs.helyx.io/api/stop-time",
-				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.Stop.stop_name}' - Departure time: '${stopTime.Stop.departure_time}']`
+				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.departure_time}']`
 			}];
 
 			if (stopTime.stop) {
-				stop.links = [{
+				stopTime.stop.links = [{
 					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stopTime.stop_id}'`
@@ -195,6 +195,38 @@ router.get('/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 	});
 
 });
+
+
+router.get('/:stopId/stop-times/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+
+	var agencyId = req.params.agencyId;
+	var stopId = req.params.stopId;
+	var date = req.params.date;
+
+	stopService.findStopTimesByStopAndDate(agencyId, stopId, date).then((stop) => {
+		if (!stop) {
+			res.status(404).end();
+		}
+		else {
+			stop.links = [{
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops`,
+				"rel": "http://gtfs.helyx.io/api/stops",
+				"title": `Stops`
+			}, {
+				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopId}/${date}`,
+				"rel": "http://gtfs.helyx.io/api/stop",
+				"title": `Stop`
+			}];
+
+			res.json(format(stop));
+		}
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
+	});
+
+});
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////

@@ -138,7 +138,7 @@ var findStopById = (agencyId, stopId) => {
 	var db = DB.schema(agencyId);
 
 	return new db.Stop({ stop_id: stopId }).fetch().then((stop) => {
-		return stop.toJSON();
+		return stop ? stop.toJSON() : stop;
 	});
 };
 
@@ -156,7 +156,7 @@ var findStopTimesByStopId = (agencyId, stopId) => {
 			.query((q) => q.where({stop_id: stopId}))
 			.fetch({withRelated: ['stop']})
 			.then((stopTimes) => {
-				return stopTimes.toJSON();
+				stopTimes = stopTimes.toJSON();
 				logger.info(`DB Query Done in ${Date.now() - start} ms`);
 				callback(undefined, stopTimes);
 			});
