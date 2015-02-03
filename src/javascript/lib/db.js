@@ -17,8 +17,8 @@ var createSchemaConnection = function(agencyId) {
 			database : agencyId ? `${config.db.database}_${agencyId}` : config.db.database
 		},
 		pool: {
-			min: config.db.min,
-			max: config.db.max
+			min: config.db.pool.min,
+			max: config.db.pool.max
 		}
 	});
 

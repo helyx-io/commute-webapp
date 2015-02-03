@@ -167,7 +167,7 @@ router.get('/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 	var stopId = req.params.stopId;
 //	var date = moment(req.params.date, 'YYYYMMDD');
 
-	stopService.findStopTimesByStopId(agencyId, stopId, 1000).then((stopTimes) => {
+	stopService.findStopTimesByStopId(agencyId, stopId).then((stopTimes) => {
 
 		stopTimes.forEach((stopTime) => {
 

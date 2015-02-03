@@ -1,30 +1,21 @@
-(function() {
-	var cluster, fs, http, logger, recluster, util;
+var fs = require('fs');
+var util = require('util');
+var http = require('http');
+var recluster = require('recluster');
+var logger = require('winston');
 
-	fs = require('fs');
+var cluster = recluster("" + __dirname + "/app");
 
-	util = require('util');
+cluster.run();
 
-	http = require('http');
+fs.watchFile("package.json", (curr, prev) => {
+	logger.info("Package.json changed, reloading cluster...");
+	return cluster.reload();
+});
 
-	recluster = require('recluster');
+process.on("SIGUSR2", () => {
+	logger.info("Got SIGUSR2, reloading cluster...");
+	return cluster.reload();
+});
 
-	logger = require('winston');
-
-	cluster = recluster("" + __dirname + "/app");
-
-	cluster.run();
-
-	fs.watchFile("package.json", function(curr, prev) {
-		logger.info("Package.json changed, reloading cluster...");
-		return cluster.reload();
-	});
-
-	process.on("SIGUSR2", function() {
-		logger.info("Got SIGUSR2, reloading cluster...");
-		return cluster.reload();
-	});
-
-	logger.info("Spawned cluster, kill -s SIGUSR2 " + process.pid + " to reload");
-
-}).call(this);
+logger.info("Spawned cluster, kill -s SIGUSR2 " + process.pid + " to reload");

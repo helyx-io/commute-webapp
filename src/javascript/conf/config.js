@@ -13,7 +13,7 @@ var db = {
 	password: process.env.MYSQL_PASSWORD || 'gtfs',
 	pool: {
 		min: process.env.MYSQL_POOL_MIN || 0,
-		max: process.env.MYSQL_POOL_MAX || 7
+		max: process.env.MYSQL_POOL_MAX || 256
 	}
 };
 

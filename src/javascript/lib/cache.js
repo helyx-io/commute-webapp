@@ -54,7 +54,7 @@ var fetch = (client, key) => {
 		// Fetch the content from the Redis server.
 		var start = Date.now();
 		client.get(key, (error, result) => {
-			logger.info(`[${++counter}] Cache access Done in ${Date.now() - start} ms`);
+			// logger.info(`[${++counter}] Cache access Done in ${Date.now() - start} ms`);
 			deferred.cacheKey = key;
 			if (error || !result) {
 				// An error occurred or the result was empty, therefore we'll reject

@@ -33,7 +33,6 @@ var findStops = (agencyId, limit) => {
 	});
 };
 
-
 var findNearestStops = (agencyId, lat, lon, distance) => {
 
 	var db = DB.schema(agencyId);
@@ -61,12 +60,14 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 	});
 };
 
-var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
+var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
+	var cacheKey = `/agencies/${agencyId}/stops/${stopId}/${date}`;
 
-	return findNearestStops(agencyId, lat, lon, distance).then((stops) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 
-		return Promise.all(stops.map((stop) => {
-			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stop.stop_id, date).then((lines) => {
+		return findStopById(agencyId, stopId).then((stop) => {
+
+			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date).then((lines) => {
 				lines.forEach((line) => {
 					if (line.stop_times.length > 0) {
 						line.trip_id = line.stop_times[0].trip_id;
@@ -92,9 +93,24 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 				})).then((lines) => {
 					stop.lines = lines;
 
-					return stop;
+					callback(undefined, stop);
 				});
 			});
+
+		});
+
+	}).then((stop) => {
+//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		return stop;
+	});
+};
+
+var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
+
+	return findNearestStops(agencyId, lat, lon, distance).then((stops) => {
+
+		return Promise.all(stops.map((stop) => {
+			return findStopTimesByStopAndDate(agencyId, stop.stop_id, date);
 		})).then((stops) => {
 			return _.values(_.groupBy(stops, (stop) => {
 				return stop.stop_name + stop.stop_desc + stop.location_type;
@@ -127,15 +143,29 @@ var findStopById = (agencyId, stopId) => {
 };
 
 
-var findStopTimesByStopId = (agencyId, stopId, limit) => {
+var findStopTimesByStopId = (agencyId, stopId) => {
 
 	var db = DB.schema(agencyId);
+	// var fetchStart = Date.now();
+	var cacheKey = `/agencies/${agencyId}/stops/${stopId}/stop-times`;
 
-	return db.StopTimes.query( (q) => q.where({ stop_id: stopId }).limit(limit) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
-		return stopTimes.toJSON();
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
+		var start = Date.now();
+
+		return db.StopTimes
+			.query((q) => q.where({stop_id: stopId}))
+			.fetch({withRelated: ['stop']})
+			.then((stopTimes) => {
+				return stopTimes.toJSON();
+				logger.info(`DB Query Done in ${Date.now() - start} ms`);
+				callback(undefined, stopTimes);
+			});
+	}).then((stopTimes) => {
+//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+
+		return stopTimes;
 	});
 };
-
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
@@ -145,6 +175,7 @@ module.exports = {
 	findStops: findStops,
 	findLinesByStopIdAndDate: findNearestStops,
 	findNearestStopsByDate: findNearestStopsByDate,
+	findStopTimesByStopAndDate: findStopTimesByStopAndDate,
 	findStopById: findStopById,
 	findStopTimesByStopId: findStopTimesByStopId
 };
