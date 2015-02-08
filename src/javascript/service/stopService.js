@@ -19,6 +19,10 @@ var redis = require('redis');
 var redisClient = redis.createClient();
 var Cache = require("../lib/cache");
 
+String.prototype.capitalize = function() {
+	return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
@@ -67,6 +71,8 @@ var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
 
 		return findStopById(agencyId, stopId).then((stop) => {
 
+			stop.stop_name = stop.stop_name.capitalize();
+
 			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date).then((lines) => {
 				lines.forEach((line) => {
 					if (line.stop_times.length > 0) {
@@ -85,8 +91,8 @@ var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
 
 				return Promise.all(lines.map((line) => {
 					return tripService.findStopTimesByTripId(agencyId, line.trip_id).then((stopTimes) => {
-						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name : null;
-						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name : null;
+						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name.capitalize() : null;
+						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name.capitalize() : null;
 
 						return line;
 					});
@@ -101,6 +107,7 @@ var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
 
 	}).then((stop) => {
 //		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+
 		return stop;
 	});
 };
@@ -110,11 +117,16 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 	return findNearestStops(agencyId, lat, lon, distance).then((stops) => {
 
 		return Promise.all(stops.map((stop) => {
-			return findStopTimesByStopAndDate(agencyId, stop.stop_id, date);
+			return findStopTimesByStopAndDate(agencyId, stop.stop_id, date).then((foundStop) => {
+				foundStop.stop_distance = stop.stop_distance;
+				return foundStop;
+			});
 		})).then((stops) => {
-			return _.values(_.groupBy(stops, (stop) => {
+			var remappedStops = _.values(_.groupBy(stops, (stop) => {
 				return stop.stop_name + stop.stop_desc + stop.location_type;
-			})).map((stops) => {
+			})).filter((stop) => {
+				return stop[0].lines.length > 0;
+			}).map((stops) => {
 				return {
 					name: stops[0].stop_name,
 					desc: stops[0].stop_desc,
@@ -128,6 +140,7 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 					lines: _.flatten(_.pluck(stops, 'lines'))
 				};
 			});
+			return remappedStops;
 		});
 	});
 };

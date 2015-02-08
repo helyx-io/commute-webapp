@@ -1,5 +1,9 @@
 $(document).foundation();
 
+String.prototype.capitalize = function() {
+	return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Application
@@ -30,12 +34,14 @@ gtfsApp.factory('Globals', function($rootScope) {
 	var availableConfigs = [
 		{
 			dataset: 'RATP_GTFS_FULL',
-			distance: 1000,
 			center: { latitude: 48.814593, longitude: 2.4586253 },
 			locations: 1
 		}, {
-			dataset: 'STAR_GTFS_RENNES',
-			distance: 1000,
+			dataset: 'INTERCITES',
+			center: { latitude: 48.814593, longitude: 2.4586253 },
+			locations: 1
+		}, {
+			dataset: 'STAR',
 			center: { latitude: 48.1089, longitude: -1.47798 },
 			locations: 1,
 			stopId: '4152'
@@ -46,6 +52,7 @@ gtfsApp.factory('Globals', function($rootScope) {
 	var globals =  {
 		date: moment().format("YYYY-MM-DD"),
 		baseURL: window.location.protocol + '//' + window.location.host,
+		distance: 1000,
 		availableConfigs: availableConfigs,
 		DEFAULT_CONFIG_KEY: 'RATP_GTFS_FULL'
 	};
@@ -66,6 +73,10 @@ gtfsApp.factory('Globals', function($rootScope) {
 
 	if (urlParams.lat && urlParams.lon) {
 		globals.qsPosition = { coords: { latitude: Number(urlParams.lat), longitude: Number(urlParams.lon) } };
+	}
+
+	if (urlParams.distance) {
+		globals.distance = Number(urlParams.distance);
 	}
 
 	globals.selectConfig = function(agencyKey) {
@@ -114,7 +125,7 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 	$rootScope.$on('config', function(event, config) {
 		var position = Globals.position;
 
-		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, config.distance, config.locations).then(function(stops) {
+		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, Globals.distance, config.locations).then(function(stops) {
 			$rootScope.$broadcast('stopsLoaded', stops);
 		}).catch(function(err) {
 			console.log(err);
@@ -366,7 +377,7 @@ inherits(google.maps.StopMarker, google.maps.PositionMarker);
 google.maps.StopMarker.prototype.legend = function() {
 	var stop = this.stop;
 	var distance = (stop.distance / 1000).toFixed(3);
-	return '<b>' + stop.name + '</b> - <i><small>' + distance + ' km</small></i>' + (this.address() ? '<br>' + this.address() : '');
+	return '<b>' + stop.name.capitalize() + '</b> - <i><small>' + distance + ' km</small></i>' + (this.address() ? '<br>' + this.address() : '');
 };
 
 
