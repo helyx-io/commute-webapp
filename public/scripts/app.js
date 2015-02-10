@@ -60,19 +60,19 @@ gtfsApp.factory('Globals', function($rootScope) {
 		globals.distance = Number(urlParams.distance);
 	}
 
-	globals.selectAgency = function(agency) {
-		globals.agency = agency;
+	globals.selectAgencies = function(agencies) {
+		globals.agencies = agencies;
 
-		if (!globals.position) {
+		if (!globals.position && globals.agencies && globals.agencies.length > 0) {
 			globals.position = {
 				coord: {
-					latitude: (global.agency.agency_min_lat + global.agency.agency_max_lat) / 2,
-					longitude: (global.agency.agency_min_lon + global.agency.agency_max_lon) / 2
+					latitude: (global.agencies[0].agency_min_lat + global.agencies[0].agency_max_lat) / 2,
+					longitude: (global.agencies[0].agency_min_lon + global.agencies[0].agency_max_lon) / 2
 				}
 			};
 		}
 
-		$rootScope.$broadcast('agency', globals.agency);
+		$rootScope.$broadcast('agencies', globals.agencies);
 	};
 
 
@@ -97,22 +97,35 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	$rootScope.$on('position', function(event, position) {
-		AgencyService.findMatchingAgencyByPosition(position).then(function(agency) {
-			Globals.selectAgency(agency);
+		AgencyService.findMatchingAgencyByPosition(position).then(function(agencies) {
+			Globals.selectAgencies(agencies);
 		}).catch(function(err) {
 			console.log("Error:" + JSON.stringify(err));
-			Globals.selectAgency(undefined);
 		});
 	});
 
 
-	$rootScope.$on('agency', function(event, agency) {
+	$rootScope.$on('agencies', function(event, agencies) {
 		var position = Globals.position;
 
-		StopService.fetchNearestStops(agency.agency_key, position.coords.latitude, position.coords.longitude, Globals.distance).then(function(stops) {
-			$rootScope.$broadcast('stopsLoaded', stops);
-		}).catch(function(err) {
-			console.log(err);
+		$rootScope.$broadcast('stopsReset');
+		_(agencies).pluck('agency_key').uniq().forEach(function (agencyKey) {
+			StopService.fetchNearestStops(agencyKey, position.coords.latitude, position.coords.longitude, Globals.distance).then(function(stops) {
+
+				var now = moment();
+				for (var stop of stops) {
+					for (var line of stop.lines) {
+						line.stop_times = _.filter(line.stop_times, function(stopTime) {
+							return moment(stopTime.arrival_time, 'HH:mm:ss').isAfter(now);
+						});
+						line.stop_times = line.stop_times.slice(0, 10);
+					}
+				}
+
+				$rootScope.$broadcast('stopsLoaded', stops);
+			}).catch(function(err) {
+				console.log(err);
+			});
 		});
 	});
 
@@ -212,52 +225,6 @@ gtfsApp.factory('StopService', function($http, $q, Globals) {
 	};
 
 	return stopService;
-});
-
-gtfsApp.factory('LineService', function($http, $q, Globals) {
-	var lineService = { };
-
-	lineService.fetchStopTimes = function(dataset, stopId, date) {
-		var defer = $q.defer();
-
-		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stop-times-full/' + stopId + '/' + date;
-
-		$http.get(url).success(function (lines, status, headers, config) {
-			lines.forEach(function(line) {
-				line.stop_times = _.sortBy(line.stop_times, 'arrival_time');
-			});
-
-			defer.resolve(lines);
-		}).error(function (data, status, headers, config) {
-			defer.reject(new Error('HTTP error[' + status + ']'));
-		});
-
-		return defer.promise;
-	};
-
-	return lineService;
-
-});
-
-gtfsApp.factory('TripService', function($http, $q, Globals) {
-	var tripService = { };
-
-	tripService.fetchStopTimes = function(dataset, tripId) {
-
-		var defer = $q.defer();
-
-		var url = Globals.baseURL + '/api/agencies/' + dataset + '/trips/' + tripId + '/stop-times';
-
-		$http.get(url).success(function (stopTimes, status, headers, config) {
-			defer.resolve(stopTimes);
-		}).error(function (data, status, headers, config) {
-			defer.reject(new Error('HTTP error[' + status + ']'));
-		});
-
-		return defer.promise;
-	};
-
-	return tripService;
 });
 
 
@@ -382,7 +349,7 @@ google.maps.StopMarker.prototype.legend = function() {
 /// Controllers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-gtfsApp.controller('AppController', function($rootScope, $scope, Globals) {
+gtfsApp.controller('AppController', function($rootScope, $scope) {
 	$scope.showLeftSidebar = true;
 	$scope.showRightSidebar = true;
 
@@ -427,7 +394,7 @@ gtfsApp.controller('HeaderController', function($scope, Globals) {
 	$scope.date = moment(Globals.date, "YYYY-MM-DD").format("DD/MM/YYYY");
 });
 
-gtfsApp.controller('SettingsController', function($scope, Globals) {
+gtfsApp.controller('SettingsController', function($scope) {
 
 	$scope.toggleLeftSidebar = function() {
 		$scope.$parent.toggleLeftSidebar();
@@ -454,7 +421,7 @@ gtfsApp.controller('SettingsController', function($scope, Globals) {
 	};
 });
 
-gtfsApp.controller('MainController', function($scope, Globals) {
+gtfsApp.controller('MainController', function($scope) {
 
 	var mapElt = angular.element("#map");
 	var stopsElt = angular.element('#stops');
@@ -478,7 +445,7 @@ gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService
 	});
 });
 
-gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, StopService) {
+gtfsApp.controller('StopsController', function($rootScope, $scope) {
 
 	$scope.stops = [];
 
@@ -488,7 +455,7 @@ gtfsApp.controller('StopsController', function($rootScope, $scope, $q, Globals, 
 
 });
 
-gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineService) {
+gtfsApp.controller('StopController', function($rootScope, $scope) {
 
 	$scope.stopSelect = function() {
 		console.log("Stop selected: " + $scope.stop.stop_id);
@@ -496,15 +463,15 @@ gtfsApp.controller('StopController', function($rootScope, $scope, Globals, LineS
 
 });
 
-gtfsApp.controller('StopLinesController', function($scope) {
+gtfsApp.controller('StopLinesController', function() {
 
 });
 
-gtfsApp.controller('StopLineController', function($rootScope, $scope, Globals, TripService) {
+gtfsApp.controller('StopLineController', function() {
 
 });
 
-gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, AgencyService, StopService) {
+gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals) {
 
 	$scope.stops = [];
 
@@ -532,32 +499,41 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 		google.maps.event.trigger(map,'resize');
 	});
 
+	$rootScope.$on('stopsReset', function(event) {
+		$scope.stops = [];
+	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
 
-		$scope.stops = stops;
-
-		var position = Globals.position;
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/// Position Marker
-		////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		localStorage.setItem("lastInitialPosition", JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }));
-
-		map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
-		var positionMarker = new google.maps.PositionMarker($scope, map, { lat: position.coords.latitude, lng: position.coords.longitude });
-
-		positionMarker.show();
+		$scope.stops.push(stops);
 
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Stops Markers
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		$scope.stops.forEach(function(stop) {
+		for (var stop of stops) {
 			new google.maps.StopMarker($scope, map, stop);
+		}
+	});
+
+	$rootScope.$on('position', function(event, position) {
+
+		localStorage.setItem("lastInitialPosition", JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }));
+
+		map.panTo({lat: position.coords.latitude, lng: position.coords.longitude});
+
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/// Position Marker
+		////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		var positionMarker = new google.maps.PositionMarker($scope, map, {
+			lat: position.coords.latitude,
+			lng: position.coords.longitude
 		});
+
+		positionMarker.show();
 	});
 
 	$scope.initialize = function() {

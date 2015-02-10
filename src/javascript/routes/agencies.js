@@ -119,7 +119,7 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 router.get('/nearest', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-	agencyService.findMatchingAgencyByPosition({ lat:req.query.lat , lon: req.query.lon }).then((agency) => {
+	agencyService.findNearestAgencies({ lat:req.query.lat , lon: req.query.lon }).then((agency) => {
 
 		agency.links = [{
 			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}`,

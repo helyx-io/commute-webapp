@@ -78,8 +78,13 @@ var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
 					if (line.stop_times.length > 0) {
 						line.name = line.name.toUpperCase();
 						line.trip_id = line.stop_times[0].trip_id;
-						line.route_color = line.stop_times[0].route_color.toUpperCase();
-						line.route_text_color = line.stop_times[0].route_text_color.toUpperCase();
+						if (line.route_color) {
+							line.route_color = line.route_color.toUpperCase();
+						}
+						line.route_text_color = line.stop_times[0].route_text_color;
+						if (line.route_text_color) {
+							line.route_text_color = line.route_text_color.toUpperCase();
+						}
 					}
 
 					line.stop_times = line.stop_times.map((stopTime) => {

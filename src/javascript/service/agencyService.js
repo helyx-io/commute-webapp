@@ -23,19 +23,18 @@ var findAgencies = () => {
 	});
 };
 
-var findMatchingAgencyByPosition = (position) => {
+var findNearestAgencies = (position) => {
 
 	var db = DB.schema('gtfs');
 
-	return db.Agency.query( (q) => {
+	return db.Agencies.query( (q) => {
 		return q
 			.where('agency_min_lat', '<=', position.lat)
 			.andWhere('agency_max_lat', '>=', position.lat)
 			.andWhere('agency_min_lon', '<=', position.lon)
 			.andWhere('agency_max_lon', '>=', position.lon)
-	}).fetch().then((agency) => {
-
-		return agency.toJSON();
+	}).fetch().then((agencies) => {
+		return agencies.toJSON();
 	});
 };
 
@@ -63,7 +62,7 @@ var findAgencyByKey = (agencyKey) => {
 
 module.exports = {
 	findAgencies: findAgencies,
-	findMatchingAgencyByPosition: findMatchingAgencyByPosition,
+	findNearestAgencies: findNearestAgencies,
 	findAgencyByKey: findAgencyByKey
 };
 
