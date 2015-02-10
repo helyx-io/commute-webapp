@@ -113,14 +113,29 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 			StopService.fetchNearestStops(agencyKey, position.coords.latitude, position.coords.longitude, Globals.distance).then(function(stops) {
 
 				var now = moment();
+
 				for (var stop of stops) {
 					for (var line of stop.lines) {
+						if (!line.name) {
+							line.name = 'N/A';
+						}
+
+						line.name = line.name.substr(0, 3);
+
 						line.stop_times = _.filter(line.stop_times, function(stopTime) {
 							return moment(stopTime.arrival_time, 'HH:mm:ss').isAfter(now);
 						});
 						line.stop_times = line.stop_times.slice(0, 10);
 					}
+
+					stop.lines = _.filter(stop.lines, function(line) {
+						return line.stop_times.length > 0;
+					});
 				}
+
+				stops = _.filter(stops, function(stop) {
+					return stop.lines.length > 0;
+				});
 
 				$rootScope.$broadcast('stopsLoaded', stops);
 			}).catch(function(err) {
@@ -350,6 +365,7 @@ google.maps.StopMarker.prototype.legend = function() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 gtfsApp.controller('AppController', function($rootScope, $scope) {
+
 	$scope.showLeftSidebar = true;
 	$scope.showRightSidebar = true;
 
@@ -454,16 +470,6 @@ gtfsApp.controller('StopsController', function($rootScope, $scope) {
 	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
-		for (var stop of stops) {
-			for (var line of stop.lines) {
-				if (!line.name) {
-					line.name = 'N/A';
-				}
-
-				line.name = line.name.substr(0, 3);
-			}
-		}
-
 		$scope.stops = $scope.stops.concat(stops);
 	});
 
@@ -518,15 +524,6 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals) {
 	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
-		for (var stop of stops) {
-			for (var line of stop.lines) {
-				if (!line.name) {
-					line.name = 'N/A';
-				}
-
-				line.name = line.name.substr(0, 3);
-			}
-		}
 
 		$scope.stops = $scope.stops.concat(stops);
 
