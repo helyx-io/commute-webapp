@@ -122,9 +122,21 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 
 						line.name = line.name.substr(0, 3);
 
-						line.stop_times = _.filter(line.stop_times, function(stopTime) {
+						line.stop_times = _.chain(line.stop_times)
+						.sortBy(function(stopTime) {
+							return stopTime.arrival_time;
+						})
+						.filter(function(stopTime) {
 							return moment(stopTime.arrival_time, 'HH:mm:ss').isAfter(now);
-						});
+						})
+						.map(function(stopTime) {
+							stopTime.departure_time = stopTime.departure_time.indexOf('24') == 0 ? '00' + stopTime.departure_time.substr(2) : stopTime.departure_time;
+							stopTime.arrival_time = stopTime.arrival_time.indexOf('24') == 0 ? '00' + stopTime.arrival_time.substr(2) : stopTime.arrival_time;
+
+							return stopTime;
+						})
+						.value();
+
 						line.stop_times = line.stop_times.slice(0, 10);
 					}
 
