@@ -73,7 +73,7 @@ var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
 
 			stop.stop_name = stop.stop_name.capitalize();
 
-			return stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date).then((lines) => {
+			return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stopId, date).then((lines) => {
 				lines.forEach((line) => {
 					if (line.stop_times.length > 0) {
 						line.trip_id = line.stop_times[0].trip_id;
