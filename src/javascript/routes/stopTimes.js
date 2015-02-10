@@ -27,7 +27,7 @@ var DB = require('../lib/db');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -62,8 +62,9 @@ var router = express.Router({mergeParams: true});
 
 router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var stopId = req.params.stopId;
 
@@ -76,7 +77,7 @@ router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 			var stopTime = stopTime.toJSON();
 
 			stopTime.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${stopTime.trip_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/trips/${stopTime.trip_id}`,
 				"rel": "http://gtfs.helyx.io/api/trip",
 				"title": `Trip '${stopTime.trip_id}'`
 			}];
@@ -84,7 +85,7 @@ router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 			if (stopTime.stop) {
 
 				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopTime.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stopTime.stop_id}'`
 				}];

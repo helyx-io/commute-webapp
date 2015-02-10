@@ -27,7 +27,7 @@ var DB = require('../lib/db');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -61,14 +61,15 @@ var format = (data) => {
 var router = express.Router({mergeParams: true});
 
 
-router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var routeShortname = req.query.routeShortName;
 
-	var query = { agency_id: agencyId};
+	var query = { };
 
 	if (routeShortname) {
 		query.route_short_name = routeShortname;
@@ -80,11 +81,11 @@ router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (r
 		routes.forEach((route) => {
 
 			route.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}`,
 				"rel": "http://gtfs.helyx.io/api/agency",
-				"title": `Agency '${agencyId}'`
+				"title": `Agency '${agencyKey}'`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${route.route_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/routes/${route.route_id}`,
 				"rel": "http://gtfs.helyx.io/api/route",
 				"title": `Route '${route.route_id}'`
 			}];
@@ -102,40 +103,41 @@ router.get('/agencies/:agencyId/routes', /*security.ensureJWTAuthenticated,*/ (r
 				.then((stopTimes) => {
 					route.first_stop = stopTimes.models[0].related('stop').toJSON();
 					route.first_stop.links = [{
-						"href": (baseApiURL(req) + "/agencies/" + agencyId + "/stops/" + route.first_stop.stop_id),
+						"href": `${baseApiURL(req)}/agencies/${agencyKey}/stop/${route.first_stop.stop_id}`,
 						"rel": "http://gtfs.helyx.io/api/stop",
-						"title": ("Stop '" + route.first_stop.stop_id + "'")
+						"title": `Stop '${route.first_stop.stop_id}'`
 					}];
 
 					route.last_stop = stopTimes.models[stopTimes.length - 1].related('stop').toJSON();
 					route.last_stop.links = [{
-						"href": (baseApiURL(req) + "/agencies/" + agencyId + "/stops/" + route.last_stop.stop_id),
+						"href": `${baseApiURL(req)}/agencies/${agencyKey}/stop/${route.last_stop.stop_id}`,
 						"rel": "http://gtfs.helyx.io/api/stop",
-						"title": ("Stop '" + route.last_stop.stop_id + "'")
+						"title": `Stop '${route.last_stop.stop_id}'`
 					}];
 
 					return route;
 				});
 		}));
 	})
-		.then((routes)=> {
-			res.json(format(routes));
-		}).catch((err) => {
-			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-			res.status(500).json({message: err.message});
-		});
+	.then((routes)=> {
+		res.json(format(routes));
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
+	});
 
 });
 
 
-router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/:routeId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var routeId = req.params.routeId;
 
-	new db.Route({agency_id: agencyId, route_id: routeId}).fetch().then((route) => {
+	new db.Route({ route_id: routeId }).fetch().then((route) => {
 
 		if (!route) {
 			res.status(404).end();
@@ -144,11 +146,11 @@ router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthentica
 			var route = route.toJSON();
 
 			route.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/routes`,
 				"rel": "http://gtfs.helyx.io/api/routes",
 				"title": `Routes`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}/trips`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/routes/${routeId}/trips`,
 				"rel": "http://gtfs.helyx.io/api/trips",
 				"title": `Trips`
 			}];
@@ -164,10 +166,11 @@ router.get('/agencies/:agencyId/routes/:routeId', /*security.ensureJWTAuthentica
 });
 
 
-router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/:routeId/trips', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var routeId = req.params.routeId;
 
@@ -178,11 +181,11 @@ router.get('/agencies/:agencyId/routes/:routeId/trips', /*security.ensureJWTAuth
 		trips.forEach((trip) => {
 
 			trip.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes/${routeId}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/routes/${routeId}`,
 				"rel": "http://gtfs.helyx.io/api/route",
 				"title": `Route '${routeId}'`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips/${trip.trip_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/trips/${trip.trip_id}`,
 				"rel": "http://gtfs.helyx.io/api/trip",
 				"title": `Trip '${trip.trip_id}'`
 			}];

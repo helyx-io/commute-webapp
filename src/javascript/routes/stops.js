@@ -23,7 +23,7 @@ var stopService = require('../service/stopService');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -59,17 +59,18 @@ var router = express.Router({mergeParams: true});
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 
-	stopService.findStops(agencyId, 1000).then((stops) => {
+	stopService.findStops(agencyKey, 1000).then((stops) => {
 		if (withLinks(req)) {
 			stops.forEach((stop) => {
 				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}`,
 					"rel": "http://gtfs.helyx.io/api/agency",
 					"title": `Agency '${agencyId}'`
 				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stop.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stop.stop_id}'`
 				}];
@@ -86,20 +87,21 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 	var lat = req.query.lat;
 	var lon = req.query.lon;
 	var distance = req.query.distance;
 
-	stopService.findLinesByStopIdAndDate(agencyId, lat, lon, distance).then((stops) => {
+	stopService.findLinesByStopIdAndDate(agencyKey, lat, lon, distance).then((stops) => {
 		if (withLinks(req)) {
 			stops.forEach((stop) => {
 				stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}`,
 					"rel": "http://gtfs.helyx.io/api/agency",
 					"title": `Agency '${agencyId}'`
 				}, {
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stop.stop_id}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stop.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stop.stop_id}'`
 				}];
@@ -115,13 +117,14 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
 router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 	var lat = req.query.lat;
 	var lon = req.query.lon;
 	var distance = req.query.distance;
 	var date = req.params.date;
 
-	stopService.findNearestStopsByDate(agencyId, lat, lon, distance, date).then((stops) => {
+	stopService.findNearestStopsByDate(agencyKey, lat, lon, distance, date).then((stops) => {
 		res.json(stops);
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
@@ -132,20 +135,21 @@ router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => 
 
 router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 	var stopId = req.params.stopId;
 
-	stopService.findStopById(agencyId, stopId).then((stop) => {
+	stopService.findStopById(agencyKey, stopId).then((stop) => {
 		if (!stop) {
 			res.status(404).end();
 		}
 		else {
 			stop.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops`,
 				"rel": "http://gtfs.helyx.io/api/stops",
 				"title": `Stops`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopId}/stop-times`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopId}/stop-times`,
 				"rel": "http://gtfs.helyx.io/api/stop-times",
 				"title": `Stop times`
 			}];
@@ -162,24 +166,25 @@ router.get('/:stopId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 router.get('/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 
 	var stopId = req.params.stopId;
 //	var date = moment(req.params.date, 'YYYYMMDD');
 
-	stopService.findStopTimesByStopId(agencyId, stopId).then((stopTimes) => {
+	stopService.findStopTimesByStopId(agencyKey, stopId).then((stopTimes) => {
 
 		stopTimes.forEach((stopTime) => {
 
 			stopTime.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stop-times/${stopTime.stop_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stop-times/${stopTime.stop_id}`,
 				"rel": "http://gtfs.helyx.io/api/stop-time",
 				"title": `Stoptime [Stop: '${stopTime.stop_id}' - Stop Name: '${stopTime.stop.stop_name}' - Departure time: '${stopTime.departure_time}']`
 			}];
 
 			if (stopTime.stop) {
 				stopTime.stop.links = [{
-					"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopTime.stop_id}`,
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopTime.stop_id}`,
 					"rel": "http://gtfs.helyx.io/api/stop",
 					"title": `Stop '${stopTime.stop_id}'`
 				}];
@@ -199,21 +204,22 @@ router.get('/:stopId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res
 
 router.get('/:stopId/stop-times/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 	var stopId = req.params.stopId;
 	var date = req.params.date;
 
-	stopService.findStopTimesByStopAndDate(agencyId, stopId, date).then((stop) => {
+	stopService.findStopTimesByStopAndDate(agencyKey, stopId, date).then((stop) => {
 		if (!stop) {
 			res.status(404).end();
 		}
 		else {
 			stop.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops`,
 				"rel": "http://gtfs.helyx.io/api/stops",
 				"title": `Stops`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops/${stopId}/${date}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopId}/${date}`,
 				"rel": "http://gtfs.helyx.io/api/stop",
 				"title": `Stop`
 			}];

@@ -27,7 +27,7 @@ var DB = require('../lib/db');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -63,8 +63,9 @@ var router = express.Router({mergeParams: true});
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	db.Calendars.query( (q) => q ).fetch().then((calendars) => {
 
@@ -73,11 +74,11 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 		calendars.forEach((calendar) => {
 
 			calendar.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}`,
 				"rel": "http://gtfs.helyx.io/api/agency",
-				"title": `Calendar '${agencyId}'`
+				"title": `Calendar '${agencyKey}'`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars/${calendar.service_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/calendars/${calendar.service_id}`,
 				"rel": "http://gtfs.helyx.io/api/calendar",
 				"title": `Calendar '${calendar.service_id}'`
 			}];
@@ -96,8 +97,9 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 router.get('/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var serviceId = req.params.serviceId;
 
@@ -110,13 +112,9 @@ router.get('/:serviceId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 			var calendar = calendar.toJSON();
 
 			calendar.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/calendars`,
 				"rel": "http://gtfs.helyx.io/api/calendars",
 				"title": `Calendars`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates/${serviceId}`,
-				"rel": "http://gtfs.helyx.io/api/calendar-dates",
-				"title": `Calendar dates`
 			}];
 
 			res.json(format(calendar));

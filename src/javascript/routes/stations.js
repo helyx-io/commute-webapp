@@ -27,7 +27,7 @@ var DB = require('../lib/db');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -92,8 +92,8 @@ var router = express.Router({mergeParams: true});
 
 router.get('/'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
-	var agencyId = req.params.agencyId;
-	var db = DB.schema(agencyId);
+	var agencyKey = req.params.agencyKey;
+	var db = DB.schema(agencyKey);
 
 	// FIXME:  Add queryString to path
 	var start = Date.now();
@@ -112,11 +112,11 @@ router.get('/'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
 router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
-	var agencyId = req.params.agencyId;
+	var agencyKey = req.params.agencyKey;
 	var lat = req.query.lat;
 	var lon = req.query.lon;
 	var distance = req.query.distance;
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var start = Date.now();
 

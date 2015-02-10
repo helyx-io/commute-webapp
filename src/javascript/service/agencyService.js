@@ -40,11 +40,11 @@ var findMatchingAgencyByPosition = (position) => {
 };
 
 
-var findAgencyById = (agencyId) => {
+var findAgencyByKey = (agencyKey) => {
 
 	var db = DB.schema('gtfs');
 
-	return new db.Agency({ agency_id: agencyId }).fetch().then((agency) => {
+	return new db.Agency({ agency_key: agencyKey }).fetch().then((agency) => {
 
 		if (!agency) {
 			return undefined;
@@ -64,6 +64,6 @@ var findAgencyById = (agencyId) => {
 module.exports = {
 	findAgencies: findAgencies,
 	findMatchingAgencyByPosition: findMatchingAgencyByPosition,
-	findAgencyById: findAgencyById
+	findAgencyByKey: findAgencyByKey
 };
 

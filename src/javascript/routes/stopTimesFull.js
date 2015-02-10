@@ -29,7 +29,7 @@ var stopTimesFullService = require('../service/stopTimesFullService');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -85,11 +85,12 @@ var router = express.Router({mergeParams: true});
 
 router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
+	var agencyKey = req.params.agencyKey;
 	var agencyId = req.params.agencyId;
 	var stopId = req.params.stopId;
 	var date = req.params.date;
 
-	stopTimesFullService.findLinesByStopIdAndDate(agencyId, stopId, date).then((data) => {
+	stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stopId, date).then((data) => {
 		res.json(format(formatAsStopTimeFull(data)));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

@@ -18,9 +18,9 @@ var Cache = require("../lib/cache");
 // Functions
 ////////////////////////////////////////////////////////////////////////////////////
 
-var findTrips = (agencyId) => {
+var findTrips = (agencyKey) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	return db.TripServices.query( (q) => q ).fetch().then((trips) => {
 
@@ -29,9 +29,9 @@ var findTrips = (agencyId) => {
 };
 
 
-var findByTripId = (agencyId, tripId) => {
+var findByTripId = (agencyKey, tripId) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	return new db.TripService({ trip_id: tripId }).fetch().then((trip) => {
 
@@ -40,12 +40,12 @@ var findByTripId = (agencyId, tripId) => {
 };
 
 
-var findStopTimesByTripId = (agencyId, tripId) => {
+var findStopTimesByTripId = (agencyKey, tripId) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/${tripId}/stop-times`;
+	var cacheKey = `/agencies/${agencyKey}/${tripId}/stop-times`;
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();
 

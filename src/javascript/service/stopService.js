@@ -28,21 +28,21 @@ String.prototype.capitalize = function() {
 // Routes
 ////////////////////////////////////////////////////////////////////////////////////
 
-var findStops = (agencyId, limit) => {
+var findStops = (agencyKey, limit) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	return db.Stops.query( (q) => q.limit(limit) ).fetch().then((stop) => {
 		return stop.toJSON();
 	});
 };
 
-var findNearestStops = (agencyId, lat, lon, distance) => {
+var findNearestStops = (agencyKey, lat, lon, distance) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	// var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
+	var cacheKey = `/agencies/${agencyKey}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var start = Date.now();
@@ -64,12 +64,12 @@ var findNearestStops = (agencyId, lat, lon, distance) => {
 	});
 };
 
-var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
-	var cacheKey = `/agencies/${agencyId}/stops/${stopId}/${date}`;
+var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
+	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/${date}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 
-		return findStopById(agencyId, stopId).then((stop) => {
+		return findStopById(agencyKey, stopId).then((stop) => {
 
 			stop.stop_name = stop.stop_name.capitalize();
 
@@ -112,12 +112,12 @@ var findStopTimesByStopAndDate = (agencyId, stopId, date) => {
 	});
 };
 
-var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
+var findNearestStopsByDate = (agencyKey, lat, lon, distance, date) => {
 
-	return findNearestStops(agencyId, lat, lon, distance).then((stops) => {
+	return findNearestStops(agencyKey, lat, lon, distance).then((stops) => {
 
 		return Promise.all(stops.map((stop) => {
-			return findStopTimesByStopAndDate(agencyId, stop.stop_id, date).then((foundStop) => {
+			return findStopTimesByStopAndDate(agencyKey, stop.stop_id, date).then((foundStop) => {
 				foundStop.stop_distance = stop.stop_distance;
 				return foundStop;
 			});
@@ -146,9 +146,9 @@ var findNearestStopsByDate = (agencyId, lat, lon, distance, date) => {
 };
 
 
-var findStopById = (agencyId, stopId) => {
+var findStopById = (agencyKey, stopId) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	return new db.Stop({ stop_id: stopId }).fetch().then((stop) => {
 		return stop ? stop.toJSON() : stop;
@@ -156,18 +156,18 @@ var findStopById = (agencyId, stopId) => {
 };
 
 
-var findStopTimesByStopId = (agencyId, stopId) => {
+var findStopTimesByStopId = (agencyKey, stopId) => {
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 	// var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/stops/${stopId}/stop-times`;
+	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/stop-times`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var start = Date.now();
 
 		return db.StopTimes
-			.query((q) => q.where({stop_id: stopId}))
-			.fetch({withRelated: ['stop']})
+			.query((q) => q.where({ stop_id: stopId }))
+			.fetch({ withRelated: ['stop'] })
 			.then((stopTimes) => {
 				stopTimes = stopTimes.toJSON();
 				logger.info(`DB Query Done in ${Date.now() - start} ms`);

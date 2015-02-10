@@ -39,14 +39,14 @@ var dayOfWeekAsString = (day) => {
 // Functions
 ////////////////////////////////////////////////////////////////////////////////////
 
-var findLinesByStopIdAndDate = (agencyId, stopId, date) => {
+var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 
 	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
 
-	var db = DB.schema(agencyId);
+	var db = DB.schema(agencyKey);
 
 	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyId}/${stopId}/${date}`;
+	var cacheKey = `/agencies/${agencyKey}/${stopId}/${date}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
 		var start = Date.now();

@@ -31,7 +31,7 @@ var agencyService = require('../service/agencyService');
 ////////////////////////////////////////////////////////////////////////////////////
 
 var baseApiURL = (req) => {
-	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.hostname}/api`;
+	return `${req.headers["x-forwarded-proto"] || req.protocol}://${req.headers.host}/api`;
 };
 
 var withLinks = (req) => {
@@ -64,14 +64,14 @@ var format = (data) => {
 
 var router = express.Router({mergeParams: true});
 
-router.use('/:agencyId/calendars', calendars);
-router.use('/:agencyId/calendarDates', calendarDates);
-router.use('/:agencyId/routes', routes);
-router.use('/:agencyId/stations', stations);
-router.use('/:agencyId/stops', stops);
-router.use('/:agencyId/stop-times', stopTimes);
-router.use('/:agencyId/stop-times-full', stopTimesFull);
-router.use('/:agencyId/trips', trips);
+router.use('/:agencyKey/calendars', calendars);
+router.use('/:agencyKey/calendar-dates', calendarDates);
+router.use('/:agencyKey/routes', routes);
+router.use('/:agencyKey/stations', stations);
+router.use('/:agencyKey/stops', stops);
+router.use('/:agencyKey/stop-times', stopTimes);
+router.use('/:agencyKey/stop-times-full', stopTimesFull);
+router.use('/:agencyKey/trips', trips);
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
@@ -80,27 +80,27 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 		agencies.forEach((agency) => {
 
 			agency.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}`,
 				"rel": "http://gtfs.helyx.io/api/agency",
-				"title": `Agency '${agency.agency_id}'`
+				"title": `Agency '${agency.agency_key}'`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/routes`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/routes`,
 				"rel": "http://gtfs.helyx.io/api/routes",
 				"title": `Routes`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/trips`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/trips`,
 				"rel": "http://gtfs.helyx.io/api/trips",
 				"title": `Trips`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/stops`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/stops`,
 				"rel": "http://gtfs.helyx.io/api/stops",
 				"title": `Stops`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/calendars`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendars`,
 				"rel": "http://gtfs.helyx.io/api/calendars",
 				"title": `Calendars`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/calendar-dates`,
+				"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendar-dates`,
 				"rel": "http://gtfs.helyx.io/api/calendar-dates",
 				"title": `Calendar dates`
 			}];
@@ -122,27 +122,27 @@ router.get('/nearest', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 	agencyService.findMatchingAgencyByPosition({ lat:req.query.lat , lon: req.query.lon }).then((agency) => {
 
 		agency.links = [{
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}`,
 			"rel": "http://gtfs.helyx.io/api/agency",
 			"title": `Agency '${agency.agency_id}'`
 		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/routes`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/routes`,
 			"rel": "http://gtfs.helyx.io/api/routes",
 			"title": `Routes`
 		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/trips`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/trips`,
 			"rel": "http://gtfs.helyx.io/api/trips",
 			"title": `Trips`
 		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/stops`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/stops`,
 			"rel": "http://gtfs.helyx.io/api/stops",
 			"title": `Stops`
 		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/calendars`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendars`,
 			"rel": "http://gtfs.helyx.io/api/calendars",
 			"title": `Calendars`
 		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_id}/calendar-dates`,
+			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendar-dates`,
 			"rel": "http://gtfs.helyx.io/api/calendar-dates",
 			"title": `Calendar dates`
 		}];
@@ -156,11 +156,11 @@ router.get('/nearest', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 });
 
-router.get('/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
+router.get('/:agencyKey', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-	var agencyId = req.params.agencyId;
+	var agencyKey = req.params.agencyKey;
 
-	agencyService.findAgencyById(agencyId).then((agency) => {
+	agencyService.findAgencyByKey(agencyKey).then((agency) => {
 
 		if (!agency) {
 			res.status(404).end();
@@ -171,23 +171,23 @@ router.get('/:agencyId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 				"rel": "http://gtfs.helyx.io/api/agencies",
 				"title": `Agencies`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/routes`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/routes`,
 				"rel": "http://gtfs.helyx.io/api/routes",
 				"title": `Routes`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/trips`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/trips`,
 				"rel": "http://gtfs.helyx.io/api/trips",
 				"title": `Trips`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/stops`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops`,
 				"rel": "http://gtfs.helyx.io/api/stops",
 				"title": `Stops`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendars`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/calendars`,
 				"rel": "http://gtfs.helyx.io/api/calendars",
 				"title": `Calendars`
 			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyId}/calendar-dates`,
+				"href": `${baseApiURL(req)}/agencies/${agencyKey}/calendar-dates`,
 				"rel": "http://gtfs.helyx.io/api/calendar-dates",
 				"title": `Calendar dates`
 			}];

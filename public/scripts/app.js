@@ -152,6 +152,7 @@ gtfsApp.factory('AgencyService', function($http, $q, Globals) {
 			var url = Globals.baseURL + '/api/agencies/nearest?lat=' + position.coords.latitude + '&lon=' + position.coords.longitude;
 
 			$http.get(url).success(function (agency, status, headers, config) {
+				console.log("Nearest found Agency: " + JSON.stringify(agency, undefined, 2));
 				defer.resolve(agency);
 			}).error(function (data, status, headers, config) {
 				defer.reject(new Error('HTTP error[' + status + ']'));
