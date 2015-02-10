@@ -336,7 +336,7 @@ google.maps.StopMarker.prototype.legend = function() {
 		var background = line.route_color;
 		var whiteBackground = background == 'FFFFFF';
 		var color = line.route_text_color;
-		var name = line.name;
+		var name = line.name.substr(0, 3);
 		var borderStyle = whiteBackground ? '1px solid #DDD' : '1px solid #' + background;
 		return '<li class="sm-line" style="background: #' + background + '; color: #' + color + '; border: ' + borderStyle + '">' + name + '</span>';
 	}).join('') + '</ul>';
@@ -449,8 +449,22 @@ gtfsApp.controller('StopsController', function($rootScope, $scope) {
 
 	$scope.stops = [];
 
+	$rootScope.$on('stopsReset', function(event) {
+		$scope.stops = [];
+	});
+
 	$rootScope.$on('stopsLoaded', function(event, stops) {
-		$scope.stops = stops;
+		for (var stop of stops) {
+			for (var line of stop.lines) {
+				if (!line.name) {
+					line.name = 'N/A';
+				}
+
+				line.name = line.name.substr(0, 3);
+			}
+		}
+
+		$scope.stops = $scope.stops.concat(stops);
 	});
 
 });
@@ -504,8 +518,17 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals) {
 	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
+		for (var stop of stops) {
+			for (var line of stop.lines) {
+				if (!line.name) {
+					line.name = 'N/A';
+				}
 
-		$scope.stops.push(stops);
+				line.name = line.name.substr(0, 3);
+			}
+		}
+
+		$scope.stops = $scope.stops.concat(stops);
 
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////

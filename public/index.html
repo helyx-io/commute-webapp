@@ -96,22 +96,22 @@
                         <div class="stop-title" ng-click="stopSelect()">
                             <aside>{{(stop.distance / 1000).toFixed(3)}} km</aside>
                             <h2>{{stop.name}}</h2>
-                            <h3>{{stop.desc}} - <a href="" target="blank">Map</a></h3>
+                            <h3>{{stop.desc}} <span ng-show="stop.desc">-</span> <a href="" target="blank">Map</a></h3>
                         </div>
                         <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
                             <div class="line" ng-repeat="line in stop.lines" ng-controller="StopLineController">
                                 <div class="line-title">
-                                    <aside style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
-                                    <div style="float:right; display: inline-block; margin: 4px 10px 2px 10px;" ng-switch on="line.route_type">
-                                        <div class="animate-switch" ng-switch-when="1">M</div>
-                                        <div class="animate-switch" ng-switch-when="2">Train</div>
-                                        <div class="animate-switch" ng-switch-when="3">B</div>
+                                    <aside class="left" style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
+                                    <aside class="right" ng-switch on="line.route_type">
+                                        <div class="animate-switch" ng-switch-when="1"><button><ng-include src="'/images/metro.svg'" alt="Metro" /></button></div>
+                                        <div class="animate-switch" ng-switch-when="2"><button><ng-include src="'/images/train.svg'" alt="Train" /></button></div>
+                                        <div class="animate-switch" ng-switch-when="3"><button><ng-include src="'/images/bus.svg'" alt="Bus" /></button></div>
                                         <div class="animate-switch" ng-switch-when="4">Ferry</div>
                                         <div class="animate-switch" ng-switch-when="5">Téléphérique</div>
                                         <div class="animate-switch" ng-switch-when="6">Gondole</div>
                                         <div class="animate-switch" ng-switch-when="7">Féniculaire</div>
                                         <div class="animate-switch" ng-switch-default>default</div>
-                                    </div>
+                                    </aside>
                                     <h3>{{line.first_stop_name}}</h3>
                                     <h4>{{line.last_stop_name}}</h4>
                                 </div>

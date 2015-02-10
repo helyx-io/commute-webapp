@@ -287,13 +287,6 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0px;
   height: 34px;
   background: #F6F6F6; }
-  #stops .line-title aside {
-    float: left;
-    font-size: 20px;
-    width: 50px;
-    padding: 2px 0px;
-    margin: 0;
-    text-align: center; }
   #stops .line-title h3 {
     margin: 0px 0px 0px 60px;
     padding-top: 5px;
@@ -305,6 +298,33 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 12px;
     font-size: 12px;
     color: #444; }
+  #stops .line-title aside.left {
+    float: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 20px;
+    width: 50px;
+    padding: 2px 0px;
+    margin: 0;
+    text-align: center; }
+  #stops .line-title aside.right {
+    float: right;
+    margin: 4px 10px 2px 10px; }
+    #stops .line-title aside.right button {
+      margin: 0px;
+      padding: 0px;
+      width: 24px;
+      height: 24px;
+      background: none;
+      border: none;
+      outline: none; }
+      #stops .line-title aside.right button svg {
+        fill: #005f7f;
+        margin: 2px 0px;
+        padding: 0px;
+        width: 20px;
+        height: 20px; }
 
 div.line ul {
   margin: 0;
