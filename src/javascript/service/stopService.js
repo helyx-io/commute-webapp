@@ -90,7 +90,7 @@ var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
 				});
 
 				return Promise.all(lines.map((line) => {
-					return tripService.findStopTimesByTripId(agencyId, line.trip_id).then((stopTimes) => {
+					return tripService.findStopTimesByTripId(agencyKey, line.trip_id).then((stopTimes) => {
 						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name.capitalize() : null;
 						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name.capitalize() : null;
 
