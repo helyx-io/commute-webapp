@@ -320,3 +320,15 @@ ul.stop-times li {
   ul.stop-times li:hover {
     background: #E0E0E0;
     cursor: default; }
+
+div.gm-style-iw ul {
+  margin: 0;
+  padding: 0;
+  display: inline-block; }
+  div.gm-style-iw ul .sm-line {
+    display: inline-block;
+    text-align: center;
+    margin: 0 6px 0 0;
+    padding: 0;
+    font-size: 0.75em;
+    width: 30px; }

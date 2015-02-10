@@ -56,7 +56,6 @@ var format = (data) => {
 
 var router = express.Router({mergeParams: true});
 
-
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyKey = req.params.agencyKey;

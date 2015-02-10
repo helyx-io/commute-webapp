@@ -31,30 +31,11 @@ function inherits(ctor, superCtor) {
 
 gtfsApp.factory('Globals', function($rootScope) {
 
-	var availableConfigs = [
-		{
-			dataset: 'RATP_GTFS_FULL',
-			center: { latitude: 48.814593, longitude: 2.4586253 },
-			locations: 1
-		}, {
-			dataset: 'INTERCITES',
-			center: { latitude: 48.814593, longitude: 2.4586253 },
-			locations: 1
-		}, {
-			dataset: 'STAR',
-			center: { latitude: 48.1089, longitude: -1.47798 },
-			locations: 1,
-			stopId: '4152'
-		}
-	];
-
-
 	var globals =  {
 		date: moment().format("YYYY-MM-DD"),
 		baseURL: window.location.protocol + '//' + window.location.host,
 		distance: 1000,
-		availableConfigs: availableConfigs,
-		DEFAULT_CONFIG_KEY: 'RATP_GTFS_FULL'
+		DEFAULT_POSITION: { latitude: 48.859377, longitude: 2.331751 }
 	};
 
 
@@ -79,16 +60,19 @@ gtfsApp.factory('Globals', function($rootScope) {
 		globals.distance = Number(urlParams.distance);
 	}
 
-	globals.selectConfig = function(agencyKey) {
-		globals.config = _.find(availableConfigs, function(config) {
-			return config.dataset == agencyKey
-		});
+	globals.selectAgency = function(agency) {
+		globals.agency = agency;
 
 		if (!globals.position) {
-			globals.position = { coord: globals.config.center };
+			globals.position = {
+				coord: {
+					latitude: (global.agency.agency_min_lat + global.agency.agency_max_lat) / 2,
+					longitude: (global.agency.agency_min_lon + global.agency.agency_max_lon) / 2
+				}
+			};
 		}
 
-		$rootScope.$broadcast('config', globals.config);
+		$rootScope.$broadcast('agency', globals.agency);
 	};
 
 
@@ -114,18 +98,18 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 
 	$rootScope.$on('position', function(event, position) {
 		AgencyService.findMatchingAgencyByPosition(position).then(function(agency) {
-			Globals.selectConfig(agency ? agency.agency_key : Globals.DEFAULT_CONFIG_KEY);
+			Globals.selectAgency(agency);
 		}).catch(function(err) {
 			console.log("Error:" + JSON.stringify(err));
-			Globals.selectConfig(Globals.DEFAULT_CONFIG_KEY);
+			Globals.selectAgency(undefined);
 		});
 	});
 
 
-	$rootScope.$on('config', function(event, config) {
+	$rootScope.$on('agency', function(event, agency) {
 		var position = Globals.position;
 
-		StopService.fetchNearestStops(config.dataset, position.coords.latitude, position.coords.longitude, Globals.distance, config.locations).then(function(stops) {
+		StopService.fetchNearestStops(agency.agency_key, position.coords.latitude, position.coords.longitude, Globals.distance).then(function(stops) {
 			$rootScope.$broadcast('stopsLoaded', stops);
 		}).catch(function(err) {
 			console.log(err);
@@ -212,11 +196,11 @@ gtfsApp.factory('CalendarService', function($http, $q, Globals) {
 gtfsApp.factory('StopService', function($http, $q, Globals) {
 	var stopService = { };
 
-	stopService.fetchNearestStops = function(dataset, lat, lon, distance, locations) {
+	stopService.fetchNearestStops = function(dataset, lat, lon, distance) {
 
 		var defer = $q.defer();
 
-		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/' + Globals.date + '/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance + '&locations=' + locations;
+		var url = Globals.baseURL + '/api/agencies/' + dataset + '/stops/' + Globals.date + '/nearest?lat=' + lat + '&lon=' + lon + '&distance=' + distance;
 
 		$http.get(url).success(function (stops, status, headers, config) {
 			defer.resolve(stops);
@@ -378,7 +362,19 @@ inherits(google.maps.StopMarker, google.maps.PositionMarker);
 google.maps.StopMarker.prototype.legend = function() {
 	var stop = this.stop;
 	var distance = (stop.distance / 1000).toFixed(3);
-	return '<b>' + stop.name.capitalize() + '</b> - <i><small>' + distance + ' km</small></i>' + (this.address() ? '<br>' + this.address() : '');
+	var legend = '<b>' + stop.name.capitalize() + '</b> - <i><small>' + distance + ' km</small></i>' +
+		(this.address() ? '<br>' + this.address() : '') + '<br>';
+
+	legend += 'Lignes: <ul>' + _(stop.lines).uniq('name').map(function(line) {
+		var background = line.route_color;
+		var whiteBackground = background == 'FFFFFF';
+		var color = line.route_text_color;
+		var name = line.name;
+		var borderStyle = whiteBackground ? '1px solid #DDD' : '1px solid #' + background;
+		return '<li class="sm-line" style="background: #' + background + '; color: #' + color + '; border: ' + borderStyle + '">' + name + '</span>';
+	}).join('') + '</ul>';
+
+	return legend;
 };
 
 
@@ -517,7 +513,17 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 	/// Map Init
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	var agencyCenter = Globals.availableConfigs[0].center;
+	var agencyCenter = Globals.DEFAULT_POSITION;
+
+	var lastInitialPosition = localStorage.getItem("lastInitialPosition");
+	if (lastInitialPosition) {
+		try {
+			agencyCenter = JSON.parse(lastInitialPosition);
+		} catch(err) {
+			console.log("Error: " + err.message);
+		}
+	}
+
 	var mapCenter = Globals.qsPosition ? Globals.qsPosition.coords : agencyCenter;
 	var map = new google.maps.Map(document.getElementById('map-canvas'), { zoom: 17, center: { lat: mapCenter.latitude, lng: mapCenter.longitude } });
 
@@ -536,6 +542,8 @@ gtfsApp.controller('MapController', function($rootScope, $scope, $q, Globals, Ag
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/// Position Marker
 		////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		localStorage.setItem("lastInitialPosition", JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }));
 
 		map.panTo({ lat: position.coords.latitude, lng: position.coords.longitude });
 		var positionMarker = new google.maps.PositionMarker($scope, map, { lat: position.coords.latitude, lng: position.coords.longitude });
