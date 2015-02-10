@@ -85,6 +85,7 @@ var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
 						if (line.route_text_color) {
 							line.route_text_color = line.route_text_color.toUpperCase();
 						}
+						line.route_type = line.stop_times[0].route_type;
 					}
 
 					line.stop_times = line.stop_times.map((stopTime) => {

@@ -102,6 +102,16 @@
                             <div class="line" ng-repeat="line in stop.lines" ng-controller="StopLineController">
                                 <div class="line-title">
                                     <aside style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
+                                    <div style="float:right; display: inline-block; margin: 4px 10px 2px 10px;" ng-switch on="line.route_type">
+                                        <div class="animate-switch" ng-switch-when="1">M</div>
+                                        <div class="animate-switch" ng-switch-when="2">Train</div>
+                                        <div class="animate-switch" ng-switch-when="3">B</div>
+                                        <div class="animate-switch" ng-switch-when="4">Ferry</div>
+                                        <div class="animate-switch" ng-switch-when="5">Téléphérique</div>
+                                        <div class="animate-switch" ng-switch-when="6">Gondole</div>
+                                        <div class="animate-switch" ng-switch-when="7">Féniculaire</div>
+                                        <div class="animate-switch" ng-switch-default>default</div>
+                                    </div>
                                     <h3>{{line.first_stop_name}}</h3>
                                     <h4>{{line.last_stop_name}}</h4>
                                 </div>
