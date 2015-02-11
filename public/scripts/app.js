@@ -123,11 +123,11 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 						line.name = line.name.substr(0, 3);
 
 						line.stop_times = _.chain(line.stop_times)
-						.sortBy(function(stopTime) {
-							return stopTime.arrival_time;
-						})
 						.filter(function(stopTime) {
 							return moment(stopTime.arrival_time, 'HH:mm:ss').isAfter(now);
+						})
+						.sortBy(function(stopTime) {
+							return stopTime.arrival_time;
 						})
 						.map(function(stopTime) {
 							stopTime.departure_time = stopTime.departure_time.indexOf('24') == 0 ? '00' + stopTime.departure_time.substr(2) : stopTime.departure_time;
@@ -361,7 +361,7 @@ google.maps.StopMarker.prototype.legend = function() {
 
 	legend += 'Lignes: <ul>' + _(stop.lines).uniq('name').map(function(line) {
 		var background = line.route_color;
-		var whiteBackground = background == 'FFFFFF';
+		var whiteBackground = !background || background == 'FFFFFF';
 		var color = line.route_text_color;
 		var name = line.name.substr(0, 3);
 		var borderStyle = whiteBackground ? '1px solid #DDD' : '1px solid #' + background;
@@ -482,7 +482,9 @@ gtfsApp.controller('StopsController', function($rootScope, $scope) {
 	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
-		$scope.stops = $scope.stops.concat(stops);
+		$scope.stops = _.sortBy($scope.stops.concat(stops), function(stop) {
+			return stop.distance;
+		});
 	});
 
 });
@@ -499,7 +501,14 @@ gtfsApp.controller('StopLinesController', function() {
 
 });
 
-gtfsApp.controller('StopLineController', function() {
+gtfsApp.controller('StopLineController', function($scope) {
+
+	$scope.showContent = false;
+	$scope.nextStopTime = Math.floor( moment($scope.line.stop_times[0].arrival_time, 'HH:mm:ss').diff(moment()) / 1000 / 60).toFixed(0);
+
+	$scope.toggleContent = function() {
+		$scope.showContent = !$scope.showContent;
+	};
 
 });
 
