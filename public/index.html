@@ -94,9 +94,11 @@
                 <div id="stops" ng-cloak ng-controller="StopsController">
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
                         <div class="stop-title" ng-click="stopSelect()">
-                            <aside>{{(stop.distance / 1000).toFixed(3)}} km</aside>
+                            <aside>
+                                {{(stop.distance / 1000).toFixed(3)}} km
+                            </aside>
                             <h2>{{stop.name}}</h2>
-                            <h3>{{stop.desc}} <span ng-show="stop.desc">-</span> <a href="" target="blank">Map</a></h3>
+                            <h3>{{stop.desc}}</h3>
                         </div>
                         <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
                             <div class="line" ng-repeat="line in stop.lines" ng-controller="StopLineController">
