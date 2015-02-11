@@ -76,12 +76,12 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   top: 0px;
   right: 0px;
-  width: 380px;
+  width: 420px;
   bottom: 0px;
   background: #FFFFFF;
   border-left: #E0E0E0 1px solid; }
   #sidebar-right.hidden {
-    right: -380px; }
+    right: -420px; }
 
 #sidebar-right-content {
   height: 100%;
