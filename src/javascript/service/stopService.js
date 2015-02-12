@@ -10,13 +10,15 @@ var _ = require('lodash');
 var logger = require('../log/logger');
 var DB = require('../lib/db');
 
+var config = require('../conf/config');
+
 var stopTimesFullService = require('../service/stopTimesFullService');
 var tripService = require('../service/tripService');
 
 var redis = require('redis');
 //redis.debug_mode = true;
 
-var redisClient = redis.createClient();
+var redisClient = redis.createClient(config.redis.port, config.redis.host);
 var Cache = require("../lib/cache");
 
 String.prototype.capitalize = function() {
@@ -71,7 +73,7 @@ var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
 
 		return findStopById(agencyKey, stopId).then((stop) => {
 
-			stop.stop_name = stop.stop_name.capitalize();
+			stop.stop_name = stop.stop_name.toUpperCase();
 
 			return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stopId, date).then((lines) => {
 				lines.forEach((line) => {
@@ -181,7 +183,7 @@ var findStopTimesByStopId = (agencyKey, stopId) => {
 				callback(undefined, stopTimes);
 			});
 	}).then((stopTimes) => {
-//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[STOP] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 
 		return stopTimes;
 	});

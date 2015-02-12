@@ -43,6 +43,10 @@ module.exports = {
 			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
+	redis: {
+		host: process.env.REDIS_HOST || 'localhost',
+		port: process.env.REDIS_PORT || 8888
+	},
 	db: db,
 	monitoring: {
 		newrelic: {

@@ -8,8 +8,12 @@ var util = require('util');
 var logger = require('../log/logger');
 var DB = require('../lib/db');
 
+var config = require('../conf/config');
 
-var redisClient = require('redis').createClient();
+var redis = require('redis');
+//redis.debug_mode = true;
+
+var redisClient = redis.createClient(config.redis.port, config.redis.host);
 
 var Cache = require("../lib/cache");
 
@@ -62,7 +66,7 @@ var findStopTimesByTripId = (agencyKey, tripId) => {
 		});
 
 	}).then((stopTimes) => {
-//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[TRIP] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		return stopTimes;
 	});
 };

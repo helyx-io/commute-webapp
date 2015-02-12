@@ -12,7 +12,12 @@ var Promise = require('bluebird');
 var logger = require('../log/logger');
 var DB = require('../lib/db');
 
-var redisClient = require('redis').createClient();
+var config = require('../conf/config');
+
+var redis = require('redis');
+//redis.debug_mode = true;
+
+var redisClient = redis.createClient(config.redis.port, config.redis.host);
 var Cache = require("../lib/cache");
 
 
@@ -91,7 +96,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		});
 
 	}).then((lines) => {
-//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[STOP_TIMES_FULL] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		return lines;
 	});
 
