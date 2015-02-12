@@ -476,20 +476,39 @@ gtfsApp.controller('SidebarCalendarController', function($scope, CalendarService
 gtfsApp.controller('StopsController', function($rootScope, $scope) {
 
 	$scope.stops = [];
+	$scope.searchFilter = '';
+	$scope.allStops = [];
 
 	$rootScope.$on('stopsReset', function(event) {
 		$scope.stops = [];
 	});
 
 	$rootScope.$on('stopsLoaded', function(event, stops) {
-		$scope.stops = _.sortBy($scope.stops.concat(stops), function(stop) {
+		$scope.allStops = _.sortBy($scope.stops.concat(stops), function(stop) {
 			return stop.distance;
 		});
+
+		$scope.filterStops();
 	});
+
+	$scope.onSearchFilterChange = function() {
+		$scope.filterStops();
+	}
+
+	$scope.filterStops = function() {
+		if (!$scope.searchFilter) {
+			$scope.stops = $scope.allStops;
+		} else {
+			$scope.stops = _.filter($scope.allStops, function(stop) {
+				return stop.name.indexOf($scope.searchFilter) >= 0;
+			});
+		}
+	}
 
 });
 
 gtfsApp.controller('StopController', function($rootScope, $scope) {
+
 
 	$scope.stopSelect = function() {
 		console.log("Stop selected: " + $scope.stop.stop_id);
