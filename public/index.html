@@ -91,6 +91,11 @@
         <div id="sidebar-right">
 
             <div id="sidebar-right-content" ng-show="showRightSidebar">
+
+                <div class="search">
+                    <input type="text" value="" placeholder="Recherche" />
+                </div>
+
                 <div id="stops" ng-cloak ng-controller="StopsController">
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
                         <div class="stop-title" ng-click="stopSelect()">

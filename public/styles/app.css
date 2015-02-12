@@ -87,6 +87,20 @@ h1, h2, h3, h4, h5, h6 {
   height: 100%;
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch; }
+  #sidebar-right-content .search {
+    margin: 0;
+    padding: 6px;
+    background: #F0F0F0; }
+    #sidebar-right-content .search input {
+      border: 1px solid #FFFFFF;
+      margin: 0;
+      padding: 0;
+      background: #FFFFFF;
+      border-radius: 2px;
+      outline: 0;
+      box-shadow: none;
+      height: 24px;
+      text-align: center; }
 
 #footer {
   position: absolute;
