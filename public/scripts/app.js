@@ -499,8 +499,9 @@ gtfsApp.controller('StopsController', function($rootScope, $scope) {
 		if (!$scope.searchFilter) {
 			$scope.stops = $scope.allStops;
 		} else {
+			var searchFilter = $scope.searchFilter.toUpperCase();
 			$scope.stops = _.filter($scope.allStops, function(stop) {
-				return stop.name.indexOf($scope.searchFilter) >= 0;
+				return stop.name.indexOf(searchFilter) >= 0;
 			});
 		}
 	}
