@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
-    <title>Helyx.io - Playground</title>
+    <title>Commute</title>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
 
 
@@ -94,7 +94,7 @@
 
                 <div id="stops" ng-cloak ng-controller="StopsController">
                     <div class="search">
-                        <input id="serch-filter" type="text" placeholder="Recherche" ng-model="searchFilter" ng-change="onSearchFilterChange()" />
+                        <input id="serch-filter" type="text" placeholder="Rechercher" ng-model="searchFilter" ng-change="onSearchFilterChange()" />
                     </div>
 
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
