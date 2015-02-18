@@ -53,42 +53,68 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/${date}/lines`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
-		var queryCalendar = db.knex
-			.select('stop_times_full.*')
-			.from('stop_times_full')
-			.innerJoin('calendars', 'stop_times_full.service_id', 'calendars.service_id')
+	return Cache.fetch(redisClient, cacheKey).otherwhise({ }, (callback) => {
+		db.knex
+//			.select('stf.*')
+			.select('stf.stop_id')
+			.select('stf.stop_name')
+			.select('stf.stop_desc')
+			.select('stf.stop_lat')
+			.select('stf.stop_lon')
+			.select('stf.location_type')
+			.select('stf.arrival_time')
+			.select('stf.departure_time')
+			.select('stf.stop_sequence')
+			.select('stf.direction_id')
+			.select('stf.route_short_name')
+			.select('stf.route_type')
+			.select('stf.route_color')
+			.select('stf.route_text_color')
+			.select('stf.trip_id')
+			.from('stop_times_full as stf')
+			.innerJoin('calendars as c ', 'stf.service_id', 'c.service_id')
 			.where({ stop_id: stopId })
 			.andWhere('start_date', '<=', date)
 			.andWhere('end_date', '>=', date)
-			.andWhere(dayOfWeek, 1);
+			.andWhere(dayOfWeek, 1).union(function() {  // Do not use fat arrow here !{
+				this
+					//.select('stf.*')
+					.select('stf.stop_id')
+					.select('stf.stop_name')
+					.select('stf.stop_desc')
+					.select('stf.stop_lat')
+					.select('stf.stop_lon')
+					.select('stf.location_type')
+					.select('stf.arrival_time')
+					.select('stf.departure_time')
+					.select('stf.stop_sequence')
+					.select('stf.direction_id')
+					.select('stf.route_short_name')
+					.select('stf.route_type')
+					.select('stf.route_color')
+					.select('stf.route_text_color')
+					.select('stf.trip_id')
+					.from('stop_times_full as stf')
+					.innerJoin('calendar_dates as cd', 'stf.service_id', 'cd.service_id')
+					.where({ stop_id: stopId })
+					.andWhere('date', '=', date)
+			}).then((stopTimesFull) => {
+				if (!stopTimesFull) {
+					callback(undefined, []);
+				}
+				else {
+					var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
 
-		var queryCalendarDates = db.knex
-			.select('stop_times_full.*')
-			.from('stop_times_full')
-			.innerJoin('calendar_dates', 'stop_times_full.service_id', 'calendar_dates.service_id')
-			.where({ stop_id: stopId })
-			.andWhere('date', '=', date);
+					var lines = Object.keys(stopTimesFullByLine).map( (line) => {
+						return {
+							name: line,
+							stop_times: stopTimesFullByLine[line]
+						};
+					});
 
-		Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
-
-			var stopTimesFull = _.union(stopTimesFullCalendar, stopTimesFullCalendarDates);
-
-			if (!stopTimesFull) {
-				callback(undefined, []);
-			}
-			else {
-				var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
-
-				var lines = Object.keys(stopTimesFullByLine).map( (line) => {
-					return {
-						name: line,
-						stop_times: stopTimesFullByLine[line]
-					};
-				});
-
-				callback(undefined, lines);
-			}
+					callback(undefined, lines);
+					//return lines;
+				}
 		});
 
 	}).then((lines) => {

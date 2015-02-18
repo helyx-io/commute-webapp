@@ -59,6 +59,7 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 		}).fetch().then((stops) => {
 			stops = stops.toJSON();
 			logger.info(`DB Query Done in ${Date.now() - start} ms`);
+			//return stops;
 			callback(undefined, stops);
 		});
 	}).then((stops) => {
@@ -76,7 +77,7 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 
 		stop.stop_name = stop.stop_name.toUpperCase();
 
-		return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
+		stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
 			lines.forEach((line) => {
 				if (line.stop_times.length > 0) {
 					line.name = line.name.toUpperCase();
@@ -110,6 +111,7 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 			})).then((lines) => {
 				stop.lines = lines;
 
+//				return stop;
 				callback(undefined, stop);
 			});
 		});
