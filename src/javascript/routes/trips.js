@@ -118,7 +118,6 @@ router.get('/:tripId', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 });
 
-
 router.get('/:tripId/stop-times', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 	var agencyKey = req.params.agencyKey;

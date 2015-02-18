@@ -10,6 +10,8 @@ var _ = require('lodash');
 var logger = require('../log/logger');
 var DB = require('../lib/db');
 
+var Promise = require('bluebird');
+
 var config = require('../conf/config');
 
 var stopTimesFullService = require('../service/stopTimesFullService');
@@ -43,7 +45,7 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 
 	var db = DB.schema(agencyKey);
 
-	// var fetchStart = Date.now();
+	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyKey}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
@@ -52,7 +54,7 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 		db.Stops.query( (q) => {
 			return q
 				.select(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) as stop_distance`))
-				.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo)  < ${distance}`))
+				.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) < ${distance}`))
 				.orderBy('stop_distance', 'asc')
 		}).fetch().then((stops) => {
 			stops = stops.toJSON();
@@ -60,63 +62,60 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 			callback(undefined, stops);
 		});
 	}).then((stops) => {
-//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[STOP_SERVICE][FIND_NEAREST_STOPS] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 
 		return stops;
 	});
 };
 
-var findStopTimesByStopAndDate = (agencyKey, stopId, date) => {
-	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/${date}`;
+var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
+	var cacheKey = `/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/stop-times`;
+	var fetchStart = Date.now();
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 
-		return findStopById(agencyKey, stopId).then((stop) => {
+		stop.stop_name = stop.stop_name.toUpperCase();
 
-			stop.stop_name = stop.stop_name.toUpperCase();
-
-			return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stopId, date).then((lines) => {
-				lines.forEach((line) => {
-					if (line.stop_times.length > 0) {
-						line.name = line.name.toUpperCase();
-						line.trip_id = line.stop_times[0].trip_id;
-						line.route_color = line.stop_times[0].route_color;
-						if (line.route_color) {
-							line.route_color = line.route_color.toUpperCase();
-						}
-						line.route_text_color = line.stop_times[0].route_text_color;
-						if (line.route_text_color) {
-							line.route_text_color = line.route_text_color.toUpperCase();
-						}
-						line.route_type = line.stop_times[0].route_type;
+		return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
+			lines.forEach((line) => {
+				if (line.stop_times.length > 0) {
+					line.name = line.name.toUpperCase();
+					line.trip_id = line.stop_times[0].trip_id;
+					line.route_color = line.stop_times[0].route_color;
+					if (line.route_color) {
+						line.route_color = line.route_color.toUpperCase();
 					}
+					line.route_text_color = line.stop_times[0].route_text_color;
+					if (line.route_text_color) {
+						line.route_text_color = line.route_text_color.toUpperCase();
+					}
+					line.route_type = line.stop_times[0].route_type;
+				}
 
-					line.stop_times = line.stop_times.map((stopTime) => {
-						return {
-							departure_time: stopTime.departure_time,
-							arrival_time: stopTime.arrival_time
-						};
-					});
-				});
-
-				return Promise.all(lines.map((line) => {
-					return tripService.findStopTimesByTripId(agencyKey, line.trip_id).then((stopTimes) => {
-						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name.capitalize() : null;
-						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name.capitalize() : null;
-
-						return line;
-					});
-				})).then((lines) => {
-					stop.lines = lines;
-
-					callback(undefined, stop);
+				line.stop_times = line.stop_times.map((stopTime) => {
+					return {
+						departure_time: stopTime.departure_time,
+						arrival_time: stopTime.arrival_time
+					};
 				});
 			});
 
+			return Promise.all(lines.map((line) => {
+				return tripService.findStopTimesByTripId(agencyKey, line.trip_id).then((stopTimes) => {
+					line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name.capitalize() : null;
+					line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name.capitalize() : null;
+
+					return line;
+				});
+			})).then((lines) => {
+				stop.lines = lines;
+
+				callback(undefined, stop);
+			});
 		});
 
 	}).then((stop) => {
-//		logger.info(`Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[STOP_SERVICE][FIND_STOP_TIMES_BY_STOP_AND_DATE] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 
 		return stop;
 	});
@@ -127,9 +126,8 @@ var findNearestStopsByDate = (agencyKey, lat, lon, distance, date) => {
 	return findNearestStops(agencyKey, lat, lon, distance).then((stops) => {
 
 		return Promise.all(stops.map((stop) => {
-			return findStopTimesByStopAndDate(agencyKey, stop.stop_id, date).then((foundStop) => {
-				foundStop.stop_distance = stop.stop_distance;
-				return foundStop;
+			return findStopTimesByStopAndDate(agencyKey, stop, date).then((completeStop) => {
+				return completeStop;
 			});
 		})).then((stops) => {
 			var remappedStops = _.values(_.groupBy(stops, (stop) => {
@@ -169,7 +167,7 @@ var findStopById = (agencyKey, stopId) => {
 var findStopTimesByStopId = (agencyKey, stopId) => {
 
 	var db = DB.schema(agencyKey);
-	// var fetchStart = Date.now();
+	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/stop-times`;
 
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {

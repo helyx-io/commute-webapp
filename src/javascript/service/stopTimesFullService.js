@@ -51,11 +51,9 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 	var db = DB.schema(agencyKey);
 
 	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyKey}/${stopId}/${date}`;
+	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/${date}/lines`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({ expiry: 3600 }, (callback) => {
-		var start = Date.now();
-
+	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var queryCalendar = db.knex
 			.select('stop_times_full.*')
 			.from('stop_times_full')
@@ -80,8 +78,6 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 				callback(undefined, []);
 			}
 			else {
-				logger.info(`DB Query Done in ${Date.now() - start} ms`);
-
 				var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
 
 				var lines = Object.keys(stopTimesFullByLine).map( (line) => {
@@ -96,7 +92,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		});
 
 	}).then((lines) => {
-		logger.info(`[STOP_TIMES_FULL] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+		logger.info(`[STOP_TIMES_FULL][FIND_LINES_BY_STOP_ID_AND_DATE] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
 		return lines;
 	});
 

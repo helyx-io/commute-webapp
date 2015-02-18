@@ -2,8 +2,6 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-require("es6-shim");
-
 var passport = require('passport');
 var config = require('./conf/config');
 var logger = require('./log/logger');
@@ -45,7 +43,7 @@ var server = app.listen(app.get('port'), function() {
 // Signal Handlers
 ////////////////////////////////////////////////////////////////////////////////////
 
-process.on('SIGTERM',  () => {
+process.on('SIGTERM', () => {
   console.log("Received kill signal (SIGTERM), shutting down gracefully.");
   gracefullyClosing = true;
   server.close(() => {

@@ -22,6 +22,7 @@ var stops = require('./stops');
 var stopTimes = require('./stopTimes');
 var stopTimesFull = require('./stopTimesFull');
 var trips = require('./trips');
+var caches = require('./caches');
 
 var agencyService = require('../service/agencyService');
 
@@ -72,6 +73,7 @@ router.use('/:agencyKey/stops', stops);
 router.use('/:agencyKey/stop-times', stopTimes);
 router.use('/:agencyKey/stop-times-full', stopTimesFull);
 router.use('/:agencyKey/trips', trips);
+router.use('/:agencyKey/caches', caches);
 
 router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
