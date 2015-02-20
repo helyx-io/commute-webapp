@@ -101,7 +101,13 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 				});
 			});
 
-			var tripIds = lines.map((line) => { return line.trip_id; });
+			var tripIds = lines
+				.filter((line) => {
+					return line.trip_id;
+				})
+				.map((line) => {
+					return line.trip_id;
+				});
 
 			return tripService.findStopTimesByTripIds(agencyKey, tripIds).then((stopsTimesSets) => {
 

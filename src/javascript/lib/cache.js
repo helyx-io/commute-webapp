@@ -14,7 +14,7 @@ var fetch = (client, key) => {
 	deferred.otherwhise = (options, method) => {
 
 		innerDeferred.promise.then((collection) => {
-			process.nextTick(() =>{
+			process.nextTick(() => {
 				// Resolve the deferred immediately, because we got the data directly from Redis.
 				// var start = Date.now();
 				var jsonColletion = JSON.parse(collection);
@@ -26,14 +26,12 @@ var fetch = (client, key) => {
 			// When the developer has resolved the promise, we need to store the data in Redis
 			// for next time.
 			deferred.promise.then((data) => {
-				process.nextTick(() => {
-					// Store the data in Redis!
-					if (options.expiry) {
-						client.setex(key, options.expiry, JSON.stringify(data));
-					} else {
-						client.set(key, JSON.stringify(data));
-					}
-				});
+				// Store the data in Redis!
+				if (options.expiry) {
+					client.setex(key, options.expiry, JSON.stringify(data));
+				} else {
+					client.set(key, JSON.stringify(data));
+				}
 			});
 
 			process.nextTick(() => {

@@ -17,7 +17,7 @@ var redis = require('redis');
 
 var ssdb = require('ssdb');
 
-var ssdbClient = ssdb.createClient(config.redis.port, config.redis.host);
+var ssdbClient = ssdb.createClient({ port: config.redis.port, host: config.redis.host, size: 16 });
 ssdbClient.promisify();
 
 var redisClient = redis.createClient(config.redis.port, config.redis.host);
@@ -87,24 +87,36 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 		return `/agencies/${agencyKey}/trips/${tripId}/stop-times`;
 	});
 
-	return ssdbClient.multi_get(cacheKeys).then((stopTimesSets) => {
+	if (cacheKeys.length == 0) {
+		return Promise.resolve([]);
+	}
+
+	return ssdbClient.multi_get.apply(ssdbClient, cacheKeys).then((stopTimesSets) => {
 
 		var stopTimesResults = {};
 		for (var i = 0 ; i < stopTimesSets.length ; i += 2) {
 			stopTimesResults[stopTimesSets[i]] = stopTimesSets[i + 1];
 		}
 
-		stopTimesSets = tripIds.map((tripId) => {
-			return stopTimesResults[`/agencies/${agencyKey}/trips/${tripId}/stop-times`];
+		var stopTimesSetsMap = tripIds.map((tripId) => {
+			return stopTimesResults[`/agencies/${agencyKey}/trips/${tripId}/stop-times`] || 'null';
 		});
 
-		var jsonStopTimesSets = JSON.parse('[' + stopTimesSets.join(',') + ']');
+		var jsonData = '[' + stopTimesSetsMap.join(',') + ']';
+		var jsonStopTimesSets;
+
+		try {
+			jsonStopTimesSets = JSON.parse(jsonData);
+		} catch(err) {
+			logger.error("Error: " + err.message + " - Data: " + jsonData);
+		}
 
 		logger.info(`[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for key: '${JSON.stringify(cacheKeys)}' Done in ${Date.now() - fetchStart} ms`);
 
 		return jsonStopTimesSets;
 	});
 };
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
