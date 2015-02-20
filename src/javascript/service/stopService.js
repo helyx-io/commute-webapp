@@ -73,11 +73,11 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 	var cacheKey = `/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/stop-times`;
 	var fetchStart = Date.now();
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
+//	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 
 		stop.stop_name = stop.stop_name.toUpperCase();
 
-		stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
+		return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
 			lines.forEach((line) => {
 				if (line.stop_times.length > 0) {
 					line.name = line.name.toUpperCase();
@@ -120,15 +120,16 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 
 				stop.lines = lines;
 
-				callback(undefined, stop);
+				return stop;
+//				callback(undefined, stop);
 			});
 		});
 
-	}).then((stop) => {
-		logger.info(`[STOP_SERVICE][FIND_STOP_TIMES_BY_STOP_AND_DATE] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
-
-		return stop;
-	});
+	//}).then((stop) => {
+	//	logger.info(`[STOP_SERVICE][FIND_STOP_TIMES_BY_STOP_AND_DATE] Data Fetch for key: '${cacheKey}' Done in ${Date.now() - fetchStart} ms`);
+	//
+	//	return stop;
+	//});
 };
 
 var findNearestStopsByDate = (agencyKey, lat, lon, distance, date) => {
