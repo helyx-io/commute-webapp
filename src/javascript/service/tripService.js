@@ -109,44 +109,6 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 	});
 };
 
-var putStopTimesByTripIdInCache = (agencyKey) => {
-	var db = DB.schema(agencyKey);
-
-	var count = 0;
-
-	var fetchStart = Date.now();
-	var tripIdsPromise = db.knex.select('trip_id').from('trips');
-
-	tripIdsPromise.then((trips) => {
-
-		async.eachLimit(trips, 32, (trip, cb) => {
-
-			var tripId = trip.trip_id;
-			var stopTimesQueryStart = Date.now();
-			db.StopTimes.query( (q) => q.where({ trip_id: tripId }) ).fetch({ withRelated: ['stop'] }).then((stopTimes) => {
-				logger.info(`[${++count}] DB StopTimes with stop for tripId: ${tripId} Query Done in ${Date.now() - stopTimesQueryStart} ms`);
-
-				stopTimes = stopTimes.toJSON();
-
-				stopTimes.sort((st1, st2) => st1.stop_sequence - st2.stop_sequence);
-
-				var cacheKey = `/agencies/${agencyKey}/trips/${tripId}/stop-times`;
-				redisClient.set(cacheKey, JSON.stringify(stopTimes), (err) => {
-					cb(err);
-				});
-			});
-
-		}, (err) => {
-			logger.info(`[TRIP] Inserted stopTimes for ${trips.length} trips done in ${Date.now() - fetchStart} ms`);
-		});
-
-		logger.info(`[TRIP] Data fetch done in ${Date.now() - fetchStart} ms`);
-	});
-
-	return tripIdsPromise;
-};
-
-
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
 ////////////////////////////////////////////////////////////////////////////////////
@@ -155,7 +117,6 @@ module.exports = {
 	findTrips: findTrips,
 	findByTripId: findByTripId,
 	findStopTimesByTripId: findStopTimesByTripId,
-	findStopTimesByTripIds: findStopTimesByTripIds,
-	putStopTimesByTripIdInCache: putStopTimesByTripIdInCache
+	findStopTimesByTripIds: findStopTimesByTripIds
 };
 
