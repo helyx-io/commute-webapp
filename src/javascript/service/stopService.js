@@ -101,17 +101,25 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 				});
 			});
 
-			return Promise.all(lines.map((line) => {
-				return tripService.findStopTimesByTripId(agencyKey, line.trip_id).then((stopTimes) => {
-					line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop.stop_name.capitalize() : null;
-					line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop.stop_name.capitalize() : null;
+			var tripIds = lines.map((line) => { return line.trip_id; });
 
-					return line;
-				});
-			})).then((lines) => {
+			return tripService.findStopTimesByTripIds(agencyKey, tripIds).then((stopsTimesSets) => {
+
+				if (stopsTimesSets) {
+
+					lines.forEach((line, i) => {
+						var stopTimes = stopsTimesSets[i];
+
+						if (stopTimes) {
+							line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop_name.capitalize() : null;
+							line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop_name.capitalize() : null;
+						}
+					});
+
+				}
+
 				stop.lines = lines;
 
-//				return stop;
 				callback(undefined, stop);
 			});
 		});

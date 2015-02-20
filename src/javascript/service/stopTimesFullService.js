@@ -57,6 +57,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		db.knex
 //			.select('stf.*')
 			.select('stf.stop_id')
+			.select('stf.service_id')
 			.select('stf.stop_name')
 			.select('stf.stop_desc')
 			.select('stf.stop_lat')
@@ -80,6 +81,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 				this
 					//.select('stf.*')
 					.select('stf.stop_id')
+					.select('stf.service_id')
 					.select('stf.stop_name')
 					.select('stf.stop_desc')
 					.select('stf.stop_lat')

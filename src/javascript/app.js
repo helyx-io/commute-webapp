@@ -6,6 +6,7 @@ var passport = require('passport');
 var config = require('./conf/config');
 var logger = require('./log/logger');
 
+global.Promise = require('bluebird').Promise;
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Application Initialization
