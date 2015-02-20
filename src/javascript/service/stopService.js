@@ -48,7 +48,7 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyKey}/stops/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 
-	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
+	return Cache.fetch(redisClient, cacheKey).otherwhise({ timeout: 3600 }, (callback) => {
 		var start = Date.now();
 		// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
 		db.Stops.query( (q) => {
