@@ -88,9 +88,6 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 	});
 
 	return ssdbClient.multi_get(cacheKeys).then((stopTimesSets) => {
-		if (stopTimesSets.length == 0) {
-			return jsonStopTimesSets;
-		}
 
 		var stopTimesResults = {};
 		for (var i = 0 ; i < stopTimesSets.length ; i += 2) {
