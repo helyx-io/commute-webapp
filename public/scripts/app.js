@@ -60,6 +60,10 @@ gtfsApp.factory('Globals', function($rootScope) {
 		globals.distance = Number(urlParams.distance);
 	}
 
+	if (urlParams.date) {
+		globals.date = urlParams.date;
+	}
+
 	globals.selectAgencies = function(agencies) {
 		globals.agencies = agencies;
 

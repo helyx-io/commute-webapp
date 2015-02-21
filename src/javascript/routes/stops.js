@@ -121,6 +121,24 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 });
 
 
+router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
+
+	var agencyKey = req.params.agencyKey;
+	var agencyId = req.params.agencyId;
+	var lat = req.query.lat;
+	var lon = req.query.lon;
+	var distance = req.query.distance;
+	var date = req.params.date;
+
+	stopService.findNearestStopsByDate(agencyKey, lat, lon, distance, date).then((stops) => {
+		res.json(stops);
+	}).catch((err) => {
+		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+		res.status(500).json({message: err.message});
+	});
+});
+
+
 router.delete('/:date'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
 	var agencyKey = req.params.agencyKey;
@@ -139,25 +157,6 @@ router.delete('/:date'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 		res.status(200).send('Done');
 	});
 
-});
-
-
-
-router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
-
-	var agencyKey = req.params.agencyKey;
-	var agencyId = req.params.agencyId;
-	var lat = req.query.lat;
-	var lon = req.query.lon;
-	var distance = req.query.distance;
-	var date = req.params.date;
-
-	stopService.findNearestStopsByDate(agencyKey, lat, lon, distance, date).then((stops) => {
-		res.json(stops);
-	}).catch((err) => {
-		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-		res.status(500).json({message: err.message});
-	});
 });
 
 
