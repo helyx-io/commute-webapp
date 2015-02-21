@@ -9,6 +9,9 @@ var qs = require('querystring');
 var express = require('express');
 var passport = require('passport');
 var moment = require('moment');
+var ssdb = require('ssdb');
+
+var config = require('../conf/config');
 
 var security = require('../lib/security');
 var DB = require('../lib/db');
@@ -16,6 +19,9 @@ var DB = require('../lib/db');
 var logger = require('../log/logger');
 
 var stopService = require('../service/stopService');
+
+var ssdbClient = ssdb.createClient({ port: config.redis.port, host: config.redis.host, size: 16 });
+ssdbClient.promisify();
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -113,6 +119,29 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 		res.status(500).json({message: err.message});
 	});
 });
+
+
+router.delete('/:date'/*, security.ensureJWTAuthenticated*/, (req, res) => {
+
+	var agencyKey = req.params.agencyKey;
+	var db = DB.schema(agencyKey);
+
+	var date = req.params.date;
+
+	logger.info(`Finding stops ...`);
+
+	db.Stops.query( (q) => q ).fetch().then((stops) => {
+		stops.toJSON().forEach((stop) => {
+			logger.info(`Deleting stop with id: ${stop.stop_id}`);
+			ssdbClient.del(`/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/lines`);
+		});
+
+		res.status(200).send('Done');
+	});
+
+});
+
+
 
 router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 
