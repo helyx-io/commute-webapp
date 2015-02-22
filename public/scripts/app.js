@@ -75,7 +75,7 @@ gtfsApp.factory('Globals', function($rootScope) {
 				}
 			};
 		}
-
+		
 		$rootScope.$broadcast('agencies', globals.agencies);
 	};
 
