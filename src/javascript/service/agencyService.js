@@ -24,18 +24,13 @@ var findAgencies = () => {
 };
 
 var findNearestAgencies = (position) => {
-
-	var db = DB.schema('gtfs');
-
-	return db.Agencies.query( (q) => {
-		return q
-			.where('agency_min_lat', '<=', position.lat)
-			.andWhere('agency_max_lat', '>=', position.lat)
-			.andWhere('agency_min_lon', '<=', position.lon)
-			.andWhere('agency_max_lon', '>=', position.lon)
-	}).fetch().then((agencies) => {
-		return agencies.toJSON();
-	});
+    return DB.schema('gtfs').knex
+        .select("*")
+        .from("agencies")
+        .where('agency_min_lat', '<=', position.lat)
+        .andWhere('agency_max_lat', '>=', position.lat)
+        .andWhere('agency_min_lon', '<=', position.lon)
+        .andWhere('agency_max_lon', '>=', position.lon);
 };
 
 
