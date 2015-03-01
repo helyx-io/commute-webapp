@@ -69,66 +69,80 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 	});
 };
 
-var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
-	var cacheKey = `/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/stop-times`;
+var findStopTimesByStopsAndDate = (agencyKey, stops, date) => {
+//	var cacheKey = `/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/stop-times`;
 	var fetchStart = Date.now();
 
 //	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 
-		stop.stop_name = stop.stop_name.toUpperCase();
+		var stopIds = stops.map(stop => stop.stop_id);
 
-		return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
-			lines.forEach((line) => {
-				if (line.stop_times.length > 0) {
-					line.name = line.name.toUpperCase();
-					line.trip_id = line.stop_times[0].trip_id;
-					line.route_color = line.stop_times[0].route_color;
-					if (line.route_color) {
-						line.route_color = line.route_color.toUpperCase();
-					}
-					line.route_text_color = line.stop_times[0].route_text_color;
-					if (line.route_text_color) {
-						line.route_text_color = line.route_text_color.toUpperCase();
-					}
-					line.route_type = line.stop_times[0].route_type;
-				}
+		var stops2 = {};
 
-				line.stop_times = line.stop_times.map((stopTime) => {
-					return {
-						departure_time: stopTime.departure_time,
-						arrival_time: stopTime.arrival_time
-					};
-				});
-			});
+		stops.forEach(stop => stops2[stop.stop_id] = stop);
 
-			var tripIds = lines
-				.filter((line) => {
-					return line.trip_id;
-				})
-				.map((line) => {
-					return line.trip_id;
-				});
+		return stopTimesFullService.findLinesByStopIdsAndDate(agencyKey, stopIds, date).then((linesByStopIds) => {
 
-			return tripService.findStopTimesByTripIds(agencyKey, tripIds).then((stopsTimesSets) => {
+			return Promise.all(Object.keys(linesByStopIds).map(stopId => {
 
-				if (stopsTimesSets) {
+				var stop = stops2[stopId];
+				var lines = linesByStopIds[stopId];
 
-					lines.forEach((line, i) => {
-						var stopTimes = stopsTimesSets[i];
+				stop.stop_name = stop.stop_name.toUpperCase();
 
-						if (stopTimes) {
-							line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop_name.capitalize() : null;
-							line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop_name.capitalize() : null;
+				lines.forEach((line) => {
+					if (line.stop_times.length > 0) {
+						line.name = line.name.toUpperCase();
+						line.trip_id = line.stop_times[0].trip_id;
+						line.route_color = line.stop_times[0].route_color;
+						if (line.route_color) {
+							line.route_color = line.route_color.toUpperCase();
 						}
+						line.route_text_color = line.stop_times[0].route_text_color;
+						if (line.route_text_color) {
+							line.route_text_color = line.route_text_color.toUpperCase();
+						}
+						line.route_type = line.stop_times[0].route_type;
+					}
+
+					line.stop_times = line.stop_times.map((stopTime) => {
+						return {
+							departure_time: stopTime.departure_time,
+							arrival_time: stopTime.arrival_time
+						};
+					});
+				});
+
+				var tripIds = lines
+					.filter((line) => {
+						return line.trip_id;
+					})
+					.map((line) => {
+						return line.trip_id;
 					});
 
-				}
+				return tripService.findStopTimesByTripIds(agencyKey, tripIds).then((stopsTimesSets) => {
 
-				stop.lines = lines;
+					if (stopsTimesSets) {
 
-				return stop;
+						lines.forEach((line, i) => {
+							var stopTimes = stopsTimesSets[i];
+
+							if (stopTimes) {
+								line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop_name.capitalize() : null;
+								line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop_name.capitalize() : null;
+							}
+						});
+
+					}
+
+					stop.lines = lines;
+
+					return stop;
 //				callback(undefined, stop);
-			});
+				});
+
+			}));
 		});
 
 	//}).then((stop) => {
@@ -142,11 +156,7 @@ var findNearestStopsByDate = (agencyKey, lat, lon, distance, date) => {
 
 	return findNearestStops(agencyKey, lat, lon, distance).then((stops) => {
 
-		return Promise.all(stops.map((stop) => {
-			return findStopTimesByStopAndDate(agencyKey, stop, date).then((completeStop) => {
-				return completeStop;
-			});
-		})).then((stops) => {
+		return findStopTimesByStopsAndDate(agencyKey, stops, date).then((stops) => {
 			var remappedStops = _.values(_.groupBy(stops, (stop) => {
 				return stop.stop_name + stop.stop_desc + stop.location_type;
 			})).filter((stop) => {
@@ -211,9 +221,9 @@ var findStopTimesByStopId = (agencyKey, stopId) => {
 
 module.exports = {
 	findStops: findStops,
-	findLinesByStopIdAndDate: findNearestStops,
+	findNearestStops: findNearestStops,
 	findNearestStopsByDate: findNearestStopsByDate,
-	findStopTimesByStopAndDate: findStopTimesByStopAndDate,
+	findStopTimesByStopsAndDate: findStopTimesByStopsAndDate,
 	findStopById: findStopById,
 	findStopTimesByStopId: findStopTimesByStopId
 };

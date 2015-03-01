@@ -129,10 +129,100 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 };
 
 
+var findLinesByStopIdsAndDate = (agencyKey, stopIds, date) => {
+
+	var dayOfWeek = dayOfWeekAsString(moment(date, 'YYYY-MM-DD').format('E'));
+
+	var db = DB.schema(agencyKey);
+
+	var fetchStart = Date.now();
+		var queryCalendar = db.knex
+			.select('stf.stop_id')
+			.select('stf.service_id')
+			.select('stf.stop_name')
+			.select('stf.stop_desc')
+			.select('stf.stop_lat')
+			.select('stf.stop_lon')
+			.select('stf.location_type')
+			.select('stf.arrival_time')
+			.select('stf.departure_time')
+			.select('stf.stop_sequence')
+			.select('stf.direction_id')
+			.select('stf.route_short_name')
+			.select('stf.route_type')
+			.select('stf.route_color')
+			.select('stf.route_text_color')
+			.select('stf.trip_id')
+			.from('stop_times_full as stf')
+			.innerJoin('calendars', 'stf.service_id', 'calendars.service_id')
+			.where( 'stop_id', 'in', stopIds)
+			.andWhere('start_date', '<=', date)
+			.andWhere('end_date', '>=', date)
+			.andWhere(dayOfWeek, 1);
+
+		var queryCalendarDates = db.knex
+			.select('stf.stop_id')
+			.select('stf.service_id')
+			.select('stf.stop_name')
+			.select('stf.stop_desc')
+			.select('stf.stop_lat')
+			.select('stf.stop_lon')
+			.select('stf.location_type')
+			.select('stf.arrival_time')
+			.select('stf.departure_time')
+			.select('stf.stop_sequence')
+			.select('stf.direction_id')
+			.select('stf.route_short_name')
+			.select('stf.route_type')
+			.select('stf.route_color')
+			.select('stf.route_text_color')
+			.select('stf.trip_id')
+			.from('stop_times_full as stf')
+			.innerJoin('calendar_dates', 'stf.service_id', 'calendar_dates.service_id')
+			.where('stop_id', 'in', stopIds)
+			.andWhere('date', '=', date);
+
+	return Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
+
+		var stopTimesFull = _.union(stopTimesFullCalendar, stopTimesFullCalendarDates);
+
+		if (!stopTimesFull) {
+			return {};
+		}
+		else {
+
+			var stopTimesFullByStopIds = _.groupBy(stopTimesFull, 'stop_id');
+
+			var result = {};
+			for (var stopTimesFullByStopId in stopTimesFullByStopIds) {
+
+				var stopTimesFull = stopTimesFullByStopIds[stopTimesFullByStopId];
+				var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
+
+				result[stopTimesFullByStopId] = Object.keys(stopTimesFullByLine).map( (line) => {
+					return {
+						name: line,
+						stop_times: stopTimesFullByLine[line]
+					};
+				});
+			}
+
+			return result;
+		}
+
+	}).then((stopTimesFullByStopIds) => {
+		logger.info(`[STOP_TIMES_FULL][FIND_LINES_BY_STOP_ID_AND_DATE] Data Fetch done in ${Date.now() - fetchStart} ms`);
+		return stopTimesFullByStopIds;
+	});
+
+};
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
 ////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-	findLinesByStopIdAndDate: findLinesByStopIdAndDate
+	findLinesByStopIdAndDate: findLinesByStopIdAndDate,
+	findLinesByStopIdsAndDate: findLinesByStopIdsAndDate
 };

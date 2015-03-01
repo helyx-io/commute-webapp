@@ -90,7 +90,7 @@ router.get('/:stopId/:date', /*security.ensureJWTAuthenticated,*/ (req, res) => 
 	var stopId = req.params.stopId;
 	var date = req.params.date;
 
-	stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stopId, date).then((data) => {
+	stopTimesFullService.findNearestStops(agencyKey, stopId, date).then((data) => {
 		res.json(format(formatAsStopTimeFull(data)));
 	}).catch((err) => {
 		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);

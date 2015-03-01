@@ -98,7 +98,7 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	var lon = req.query.lon;
 	var distance = req.query.distance;
 
-	stopService.findLinesByStopIdAndDate(agencyKey, lat, lon, distance).then((stops) => {
+	stopService.findNearestStops(agencyKey, lat, lon, distance).then((stops) => {
 		if (withLinks(req)) {
 			stops.forEach((stop) => {
 				stop.links = [{
@@ -236,26 +236,29 @@ router.get('/:stopId/stop-times/:date', /*security.ensureJWTAuthenticated,*/ (re
 	var stopId = req.params.stopId;
 	var date = req.params.date;
 
-	stopService.findStopTimesByStopAndDate(agencyKey, stopId, date).then((stop) => {
-		if (!stop) {
-			res.status(404).end();
-		}
-		else {
-			stop.links = [{
-				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops`,
-				"rel": "http://gtfs.helyx.io/api/stops",
-				"title": `Stops`
-			}, {
-				"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopId}/${date}`,
-				"rel": "http://gtfs.helyx.io/api/stop",
-				"title": `Stop`
-			}];
+	stopService.findStopById(agencyKey, stopId).then((stop) => {
 
-			res.json(format(stop));
-		}
-	}).catch((err) => {
-		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-		res.status(500).json({message: err.message});
+		stopService.findStopTimesByStopAndDate(agencyKey, stop, date).then((stop) => {
+			if (!stop) {
+				res.status(404).end();
+			}
+			else {
+				stop.links = [{
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops`,
+					"rel": "http://gtfs.helyx.io/api/stops",
+					"title": `Stops`
+				}, {
+					"href": `${baseApiURL(req)}/agencies/${agencyKey}/stops/${stopId}/${date}`,
+					"rel": "http://gtfs.helyx.io/api/stop",
+					"title": `Stop`
+				}];
+
+				res.json(format(stop));
+			}
+		}).catch((err) => {
+			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+			res.status(500).json({message: err.message});
+		});
 	});
 
 });
