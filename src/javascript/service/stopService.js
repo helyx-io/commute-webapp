@@ -51,15 +51,13 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ timeout: 3600 }, (callback) => {
 		var start = Date.now();
 		// select st_distance(point(48.85341, 2.34880), stop_geo) as distance, s.* from stops s order by distance asc
-		db.Stops.query( (q) => {
-			return q
-				.select(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) as stop_distance`))
-				.where(db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) < ${distance}`))
-				.orderBy('stop_distance', 'asc')
-		}).fetch().then((stops) => {
-			stops = stops.toJSON();
+		db.knex
+			.select([ '*', db.knex.raw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) as stop_distance`) ])
+			.from(`stops`)
+			.whereRaw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) < ${distance}`)
+			.orderBy('stop_distance', 'asc')
+		.then((stops) => {
 			logger.info(`DB Query Done in ${Date.now() - start} ms`);
-			//return stops;
 			callback(undefined, stops);
 		});
 	}).then((stops) => {
