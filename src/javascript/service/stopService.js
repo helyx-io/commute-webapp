@@ -170,12 +170,7 @@ var findNearestStopsByDate = (agencyKey, lat, lon, distance, date) => {
 
 
 var findStopById = (agencyKey, stopId) => {
-
-	var db = DB.schema(agencyKey);
-
-	return new db.Stop({ stop_id: stopId }).fetch().then((stop) => {
-		return stop ? stop.toJSON() : stop;
-	});
+	return new DB.schema(agencyKey).knex.select('*').from(`stops`).where(`stop_id < ${stopId}`)
 };
 
 

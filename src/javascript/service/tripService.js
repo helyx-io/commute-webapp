@@ -79,7 +79,7 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 	var fetchStart = Date.now();
 
 	var cacheKeys = tripIds.map((tripId) => {
-		return `/agencies/${agencyKey}/trips/${tripId}/stop-times`;
+		return `/agencies/${agencyKey}/trips/${tripId}/stop-times/first-last`;
 	});
 
 	if (cacheKeys.length == 0) {
@@ -97,7 +97,7 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 			});
 
 			var stopTimesSetsMap = tripIds.map((tripId) => {
-				return stopTimesResults[`/agencies/${agencyKey}/trips/${tripId}/stop-times`] || 'null';
+				return stopTimesResults[`/agencies/${agencyKey}/trips/${tripId}/stop-times/first-last`] || 'null';
 			});
 
 			var jsonData = '[' + stopTimesSetsMap.join(',') + ']';
