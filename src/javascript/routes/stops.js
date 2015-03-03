@@ -9,7 +9,6 @@ var qs = require('querystring');
 var express = require('express');
 var passport = require('passport');
 var moment = require('moment');
-var ssdb = require('ssdb');
 
 var config = require('../conf/config');
 
@@ -20,8 +19,10 @@ var logger = require('../log/logger');
 
 var stopService = require('../service/stopService');
 
-var ssdbClient = ssdb.createClient({ port: config.redis.port, host: config.redis.host, size: 16 });
-ssdbClient.promisify();
+var redis = require('redis');
+//redis.debug_mode = true;
+
+var redisClient = redis.createClient(config.redis.port, config.redis.host);
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +152,7 @@ router.delete('/:date'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	db.Stops.query( (q) => q ).fetch().then((stops) => {
 		stops.toJSON().forEach((stop) => {
 			logger.info(`Deleting stop with id: ${stop.stop_id}`);
-			ssdbClient.del(`/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/lines`);
+			redisClient.del(`/agencies/${agencyKey}/stops/${stop.stop_id}/${date}/lines`);
 		});
 
 		res.status(200).send('Done');

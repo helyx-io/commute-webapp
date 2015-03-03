@@ -56,7 +56,6 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 		var queryCalendar = db.knex
 			.select('stf.stop_id')
-			.select('stf.service_id')
 			.select('stf.stop_name')
 			.select('stf.stop_desc')
 			.select('stf.stop_lat')
@@ -80,7 +79,6 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 
 		var queryCalendarDates = db.knex
 			.select('stf.stop_id')
-			.select('stf.service_id')
 			.select('stf.stop_name')
 			.select('stf.stop_desc')
 			.select('stf.stop_lat')

@@ -15,10 +15,6 @@ var config = require('../conf/config');
 var redis = require('redis');
 //redis.debug_mode = true;
 
-var ssdb = require('ssdb');
-
-var ssdbClient = ssdb.createClient({ port: config.redis.port, host: config.redis.host, size: 16 });
-
 var redisClient = redis.createClient(config.redis.port, config.redis.host);
 
 var Cache = require("../lib/cache");
