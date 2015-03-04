@@ -102,7 +102,7 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 
 			var jsonData = '[' + stopTimesSetsMap.join(',') + ']';
 			var jsonStopTimesSets = JSON.parse(jsonData);
-//			logger.info(`[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for key: '${JSON.stringify(cacheKeys)}' Done in ${Date.now() - fetchStart} ms`);
+			logger.info(`[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for key: '${JSON.stringify(cacheKeys)}' Done in ${Date.now() - fetchStart} ms`);
 
 			deferred.resolve(jsonStopTimesSets);
 		} catch(err) {
