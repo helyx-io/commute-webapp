@@ -79,7 +79,6 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 	return stopTimesFullService.findLinesByStopIdAndDate(agencyKey, stop.stop_id, date).then((lines) => {
 		lines.forEach((line) => {
 			if (line.stop_times.length > 0) {
-				line.name = line.name.toUpperCase();
 				line.trip_id = line.stop_times[0].trip_id;
 				line.route_color = line.stop_times[0].route_color;
 				if (line.route_color) {
@@ -116,8 +115,8 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 					var stopTimes = stopsTimesSets[i];
 
 					if (stopTimes) {
-						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].stop_name : null;
-						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].stop_name : null;
+						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].n : null;
+						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].n : null;
 					}
 				});
 

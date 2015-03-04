@@ -51,7 +51,7 @@ var findStopTimesByTripId = (agencyKey, tripId) => {
 	var db = DB.schema(agencyKey);
 
 	var fetchStart = Date.now();
-	var cacheKey = `/agencies/${agencyKey}/trips/${tripId}/stop-times`;
+	var cacheKey = `/${agencyKey}/t/st/${tripId}`;
 	return Cache.fetch(redisClient, cacheKey).otherwhise({ }, (callback) => {
 		var start = Date.now();
 
@@ -79,7 +79,7 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 	var fetchStart = Date.now();
 
 	var cacheKeys = tripIds.map((tripId) => {
-		return `/agencies/${agencyKey}/trips/${tripId}/stop-times/first-last`;
+		return `/${agencyKey}/t/st/fl/${tripId}`;
 	});
 
 	if (cacheKeys.length == 0) {
@@ -97,7 +97,7 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 			});
 
 			var stopTimesSetsMap = tripIds.map((tripId) => {
-				return stopTimesResults[`/agencies/${agencyKey}/trips/${tripId}/stop-times/first-last`] || 'null';
+				return stopTimesResults[`/${agencyKey}/t/st/fl/${tripId}`] || 'null';
 			});
 
 			var jsonData = '[' + stopTimesSetsMap.join(',') + ']';
