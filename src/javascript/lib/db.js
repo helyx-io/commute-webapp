@@ -8,7 +8,7 @@ var Bookshelf = require('bookshelf');
 var createSchemaConnection = function(agencyId) {
 
 	var knex = Knex({
-		debug: true,
+		debug: false,
 		client: config.db.dialect,
 		connection: {
 			host     : config.db.host,

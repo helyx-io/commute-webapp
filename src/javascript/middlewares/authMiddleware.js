@@ -8,7 +8,7 @@ var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy
 var ClientJWTBearerStrategy = require('passport-oauth2-jwt-bearer').Strategy;
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var config = require('../conf/config');
-var _ = require('underscore');
+var _ = require('lodash');
 
 var DB = require('../lib/db');
 var db = DB.schema('gtfs');
