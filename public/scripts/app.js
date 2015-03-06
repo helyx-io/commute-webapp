@@ -128,14 +128,13 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 
 						line.stop_times = _.chain(line.stop_times)
 						.filter(function(stopTime) {
-							return moment(stopTime.arrival_time, 'HH:mm:ss').isAfter(now);
+							return moment(stopTime, 'HH:mm').isAfter(now);
 						})
 						.sortBy(function(stopTime) {
-							return stopTime.arrival_time;
+							return stopTime;
 						})
 						.map(function(stopTime) {
-							stopTime.departure_time = stopTime.departure_time.indexOf('24') == 0 ? '00' + stopTime.departure_time.substr(2) : stopTime.departure_time;
-							stopTime.arrival_time = stopTime.arrival_time.indexOf('24') == 0 ? '00' + stopTime.arrival_time.substr(2) : stopTime.arrival_time;
+							stopTime = stopTime.indexOf('24') == 0 ? '00' + stopTime.substr(2) : stopTime;
 
 							return stopTime;
 						})
@@ -528,7 +527,7 @@ gtfsApp.controller('StopLinesController', function() {
 gtfsApp.controller('StopLineController', function($scope) {
 
 	$scope.showContent = false;
-	$scope.nextStopTime = Math.floor( moment($scope.line.stop_times[0].arrival_time, 'HH:mm:ss').diff(moment()) / 1000 / 60).toFixed(0);
+	$scope.nextStopTime = Math.floor( moment($scope.line.stop_times[0], 'HH:mm').diff(moment()) / 1000 / 60).toFixed(0);
 
 	$scope.toggleContent = function() {
 		$scope.showContent = !$scope.showContent;
