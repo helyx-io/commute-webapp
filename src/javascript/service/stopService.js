@@ -91,7 +91,7 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 				line.route_type = line.stop_times[0].route_type;
 			}
 
-			line.stop_times = _.chain(line.stop_times).pluck("departure_time").map(departureTime => departureTime.substr(0, 5)).value();
+			line.stop_times = line.stop_times.map(stop_times => stop_times.departure_time.substr(0, 5));
 		});
 
 		var tripIds = lines
