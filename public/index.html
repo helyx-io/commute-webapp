@@ -100,17 +100,17 @@
                     <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
                         <div class="stop-title" ng-click="stopSelect()">
                             <aside>
-                                {{(stop.distance / 1000).toFixed(3)}} km
+                                {{::(stop.distance / 1000).toFixed(3)}} km
                             </aside>
-                            <h2>{{stop.name}}</h2>
-                            <h3>{{stop.desc}}</h3>
+                            <h2>{{::stop.name}}</h2>
+                            <h3>{{::stop.desc}}</h3>
                         </div>
                         <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
                             <div class="line" ng-repeat="line in stop.lines" ng-controller="StopLineController">
                                 <div class="line-title" ng-click="toggleContent()">
-                                    <aside class="left" style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{line.name}}</aside>
+                                    <aside class="left" style="background-color:#{{line.route_color}}; color:#{{line.route_text_color}};">{{::line.name}}</aside>
                                     <aside class="right" ng-switch on="line.route_type" style="white-space: nowrap;">
-                                        <span class="nextStopTime" ng-show="nextStopTime">{{nextStopTime}} min.</span>
+                                        <span class="nextStopTime" ng-show="nextStopTime">{{::nextStopTime}} min.</span>
                                         <div class="transportType" style="display: inline-block;">
                                             <div class="animate-switch" ng-switch-when="1"><button><ng-include src="'/images/metro.svg'" alt="Metro" /></button></div>
                                             <div class="animate-switch" ng-switch-when="2"><button><ng-include src="'/images/train.svg'" alt="Train" /></button></div>
@@ -122,13 +122,17 @@
                                             <div class="animate-switch" ng-switch-default>default</div>
                                         </div>
                                     </aside>
-                                    <h3>{{line.first_stop_name}}</h3>
-                                    <h4>{{line.last_stop_name}}</h4>
+                                    <h3>{{::line.first_stop_name}}</h3>
+                                    <h4>{{::line.last_stop_name}}</h4>
                                 </div>
                                 <div class="line-content" ng-show="showContent">
                                     <ul class="stop-times">
                                         <li ng-repeat="stop_time in line.stop_times">
+<<<<<<< HEAD
                                             {{stop_time}}
+=======
+                                            {{::stop_time.arrival_time}}
+>>>>>>> daca8932e995fd33f06c2f0d1de4309cd25f2258
                                         </li>
                                     </ul>
                                 </div>
