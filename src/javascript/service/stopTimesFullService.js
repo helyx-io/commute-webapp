@@ -20,6 +20,19 @@ var redis = require('redis');
 var redisClient = redis.createClient(config.redis.port, config.redis.host);
 var Cache = require("../lib/cache");
 
+String.prototype.lpad = function(padString, length) {
+	var str = this;
+
+	while (str.length < length) {
+		str = padString + str;
+	}
+
+	return str;
+}
+
+Number.prototype.toTime = function() {
+	return String(Math.round(this / 60)).lpad('0', 2) + ':' + String(this % 60).lpad('0', 2);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -52,6 +65,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 
 	var fetchStart = Date.now();
 	var cacheKey = `/agencies/${agencyKey}/stops/${stopId}/${date}/lines`;
+	var now = moment().format('HH:mm:ss');
 
 //	return Cache.fetch(redisClient, cacheKey).otherwhise({}, (callback) => {
 	var queryCalendar = db.knex
@@ -76,7 +90,10 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		.where({ stop_id: stopId })
 		.andWhere('start_date', '<=', date)
 		.andWhere('end_date', '>=', date)
-		.andWhere(dayOfWeek, 1);
+		.andWhere(dayOfWeek, 1)
+		.andWhere('stf.departure_time', '>', now)
+		.orderBy('stf.departure_time', 'asc')
+		.limit(5);
 
 	var queryCalendarDates = db.knex
 		.select('stf.*')
@@ -98,7 +115,10 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		.from('stop_times_full as stf')
 		.innerJoin('calendar_dates', 'stf.service_id', 'calendar_dates.service_id')
 		.where({ stop_id: stopId })
-		.andWhere('date', '=', date);
+		.andWhere('date', '=', date)
+		.andWhere('stf.departure_time', '>', now)
+		.orderBy('stf.departure_time', 'asc')
+		.limit(5);
 
 	return Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
 
@@ -113,6 +133,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 			var stopTimesFullByLine = _.groupBy(stopTimesFull, 'route_short_name');
 
 			var lines = Object.keys(stopTimesFullByLine).map( (line) => {
+
 				return {
 					name: line,
 					stop_times: stopTimesFullByLine[line]
