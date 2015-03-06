@@ -91,12 +91,7 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 				line.route_type = line.stop_times[0].route_type;
 			}
 
-			line.stop_times = line.stop_times.map((stopTime) => {
-				return {
-					departure_time: stopTime.departure_time,
-					arrival_time: stopTime.arrival_time
-				};
-			});
+			line.stop_times = _.chain(line.stop_times).pluck("departure_time").map(departureTime => departureTime.departure_time.substr(0, 5)).value();
 		});
 
 		var tripIds = lines
