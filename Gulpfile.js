@@ -142,7 +142,7 @@ gulp.task('watch', ['watch-sass', 'watch-views', 'watch-public-scripts']);
 gulp.task('default',
 	function(callback) {
 		runSequence(
-			['build-sources', 'build-sass', 'mondernizr-min', 'copy-views', 'copy-project-resources'],
+			[' ', 'build-sass', 'mondernizr-min', 'copy-views', 'copy-project-resources'],
 			'copy-public',
 			'usemin-public-html',
 			callback
