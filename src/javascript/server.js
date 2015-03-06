@@ -83,7 +83,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(allowCrossDomain());
 app.use(requestLogger());
 app.use(cookieParser());
-app.use(compression({ threshold: 512 }));
+// app.use(compression({ threshold: 512 }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
 	resave: true,
