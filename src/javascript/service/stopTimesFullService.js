@@ -91,9 +91,9 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		.andWhere('start_date', '<=', date)
 		.andWhere('end_date', '>=', date)
 		.andWhere(dayOfWeek, 1)
-		.andWhere('stf.departure_time', '>', now)
-		.orderBy('stf.departure_time', 'asc')
-		.limit(5);
+//		.andWhere('stf.departure_time', '>', now)
+//		.orderBy('stf.departure_time', 'asc')
+//		.limit(5);
 
 	var queryCalendarDates = db.knex
 		.select('stf.*')
@@ -116,9 +116,9 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 		.innerJoin('calendar_dates', 'stf.service_id', 'calendar_dates.service_id')
 		.where({ stop_id: stopId })
 		.andWhere('date', '=', date)
-		.andWhere('stf.departure_time', '>', now)
-		.orderBy('stf.departure_time', 'asc')
-		.limit(5);
+//		.andWhere('stf.departure_time', '>', now)
+//		.orderBy('stf.departure_time', 'asc')
+//		.limit(5);
 
 	return Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
 
