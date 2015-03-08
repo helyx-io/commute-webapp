@@ -45,7 +45,7 @@ module.exports = {
 	},
 	redis: {
 		host: process.env.REDIS_HOST || 'localhost',
-		port: process.env.REDIS_PORT || 6380
+		port: process.env.REDIS_PORT || 8888
 	},
 	db: db,
 	monitoring: {

@@ -6,7 +6,7 @@ var gulp = require('gulp');
 
 var sourcemaps = require('gulp-sourcemaps');
 var traceur = require('gulp-traceur');
-var sass = require('gulp-sass');
+var sass = require('gulp-ruby-sass');
 
 var usemin = require('gulp-usemin');
 var uglify = require('gulp-uglify');
@@ -105,10 +105,7 @@ gulp.task('copy-project-resources', function () {
 //});
 
 gulp.task('build-sass', function () {
-	gulp.src('src/sass/**/*.scss')
-		.pipe(sass({
-			outputStyle: 'expanded'
-		}))
+	sass('src/sass', { style: 'expanded' })
 		.pipe(gulp.dest('public/styles'));
 });
 

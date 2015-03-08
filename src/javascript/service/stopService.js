@@ -56,6 +56,7 @@ var findNearestStops = (agencyKey, lat, lon, distance) => {
 		.from(`stops`)
 		.whereRaw(`111195 * st_distance(point(${lat}, ${lon}), stop_geo) < ${distance}`)
 		.orderBy('stop_distance', 'asc')
+//		.limit(120)
 //		.then((stops) => {
 //			logger.info(`DB Query Done in ${Date.now() - start} ms`);
 //			callback(undefined, stops);
