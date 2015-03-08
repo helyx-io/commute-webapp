@@ -50,6 +50,7 @@
     "moment": "^2.9.0",
     "morgan": "~1.5.1",
     "mysql": "^2.5.5",
+    "mysql2": "^0.15.3",
     "oauth2orize": "^1.0.1",
     "oauth2orize-jwt-bearer": "^0.1.0",
     "passport": "^0.2.1",

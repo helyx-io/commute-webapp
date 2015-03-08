@@ -5,7 +5,7 @@
 var appName = 'helyx.io';
 
 var db = {
-	dialect: 'mysql',
+	dialect: 'mysql2', // Perf gain: 350ms / 400ms
 	database: process.env.MYSQL_DATABASE || 'gtfs',
 	host: process.env.MYSQL_HOSTNAME || 'localhost',
 	port: process.env.MYSQL_PORT || 3306,

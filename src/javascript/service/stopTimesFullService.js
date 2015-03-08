@@ -121,6 +121,7 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 //		.limit(5);
 
 	return Promise.all([queryCalendar, queryCalendarDates]).spread((stopTimesFullCalendar, stopTimesFullCalendarDates) => {
+		logger.info(`[STOP_TIMES_FULL][FIND_LINES_BY_STOP_ID_AND_DATE] Data Fetch done in ${Date.now() - fetchStart} ms`);
 
 		var stopTimesFull = _.union(stopTimesFullCalendar, stopTimesFullCalendarDates);
 
