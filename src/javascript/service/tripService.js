@@ -71,8 +71,7 @@ var findStopTimesByTripId = (agencyKey, tripId) => {
 	});
 };
 
-
-var findStopTimesByTripIds = (agencyKey, tripIds) => {
+var findFirstAndLastStopNamesByTripIds = (agencyKey, tripIds) => {
 
 	var db = DB.schema(agencyKey);
 
@@ -88,23 +87,23 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 
 	var deferred = Promise.pending();
 
-	redisClient.mget(cacheKeys, (error, stopTimesSets) => {
+	redisClient.mget(cacheKeys, (error, stopNamesSets) => {
 		try {
-			var stopTimesResults = {};
+			var stopNamesResults = {};
 
 			cacheKeys.forEach((cacheKey, i) => {
-				stopTimesResults[cacheKey] = stopTimesSets[i];
+				stopNamesResults[cacheKey] = stopNamesSets[i];
 			});
 
-			var stopTimesSetsMap = tripIds.map((tripId) => {
-				return stopTimesResults[`/${agencyKey}/t/st/fl/${tripId}`] || 'null';
+			var stopNamesSetsMap = tripIds.map((tripId) => {
+				return stopNamesResults[`/${agencyKey}/t/st/fl/${tripId}`] || 'null';
 			});
 
-			var jsonData = '[' + stopTimesSetsMap.join(',') + ']';
-			var jsonStopTimesSets = JSON.parse(jsonData);
+			var jsonData = '[' + stopNamesSetsMap.join(',') + ']';
+			var jsonStopNamesSets = JSON.parse(jsonData);
 			logger.info(`[TRIP][FIND_STOP_TIMES_BY_TRIP_ID] Data Fetch for key: '${JSON.stringify(cacheKeys)}' Done in ${Date.now() - fetchStart} ms`);
 
-			deferred.resolve(jsonStopTimesSets);
+			deferred.resolve(jsonStopNamesSets);
 		} catch(err) {
 			logger.error("Error: " + err.message + " - Data: " + jsonData);
 			deferred.reject(err);
@@ -114,7 +113,6 @@ var findStopTimesByTripIds = (agencyKey, tripIds) => {
 	return deferred.promise;
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////////
 // Exports
 ////////////////////////////////////////////////////////////////////////////////////
@@ -123,6 +121,6 @@ module.exports = {
 	findTrips: findTrips,
 	findByTripId: findByTripId,
 	findStopTimesByTripId: findStopTimesByTripId,
-	findStopTimesByTripIds: findStopTimesByTripIds
+	findFirstAndLastStopNamesByTripIds: findFirstAndLastStopNamesByTripIds
 };
 

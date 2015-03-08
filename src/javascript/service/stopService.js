@@ -96,23 +96,19 @@ var findStopTimesByStopAndDate = (agencyKey, stop, date) => {
 		});
 
 		var tripIds = lines
-			.filter((line) => {
-				return line.trip_id;
-			})
-			.map((line) => {
-				return line.trip_id;
-			});
+			.filter(line => line.trip_id )
+			.map(line => line.trip_id );
 
-		return tripService.findStopTimesByTripIds(agencyKey, tripIds).then((stopsTimesSets) => {
+		return tripService.findFirstAndLastStopNamesByTripIds(agencyKey, tripIds).then((stopNamesSets) => {
 
-			if (stopsTimesSets) {
+			if (stopNamesSets) {
 
 				lines.forEach((line, i) => {
-					var stopTimes = stopsTimesSets[i];
+					var stopNames = stopNamesSets[i];
 
-					if (stopTimes) {
-						line.first_stop_name = stopTimes.length > 0 ? stopTimes[0].n : null;
-						line.last_stop_name = stopTimes.length > 0 ? stopTimes[stopTimes.length - 1].n : null;
+					if (stopNames && stopNames.length == 2) {
+						line.first_stop_name = stopNames[0];
+						line.last_stop_name = stopNames[1];
 					}
 				});
 
