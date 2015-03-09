@@ -136,8 +136,8 @@ var findLinesByStopIdAndDate = (agencyKey, stopId, date) => {
 			var lines = Object.keys(stopTimesFullByLine).map( (line) => {
 				stopTimesFullByLine[line] = _.take(stopTimesFullByLine[line], 3);
 				stopTimesFullByLine[line].forEach(stopTimeFull => {
-					stopTimeFull.departure_time = stopTimeFull.departure_time.toTime();
-					stopTimeFull.arrival_time = stopTimeFull.arrival_time.toTime();
+					stopTimeFull.departure_time = stopTimeFull.departure_time;
+					stopTimeFull.arrival_time = stopTimeFull.arrival_time;
 				});
 
 				return {
