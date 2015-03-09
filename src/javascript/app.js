@@ -6,7 +6,10 @@ var passport = require('passport');
 var config = require('./conf/config');
 var logger = require('./log/logger');
 
-global.Promise = require('bluebird').Promise;
+require('nodetime').profile({
+	accountKey: '9d1d8a854a009c31d69759e2e174b174f47ed537',
+	appName: 'Commute'
+});
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Application Initialization
