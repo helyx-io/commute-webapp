@@ -43,6 +43,11 @@ module.exports = {
 			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
+	services: {
+		gtfsApi: {
+			baseURL: process.env.GTFS_API_BASE_URL || "http://localhost:3000"
+		}
+	},
 	redis: {
 		host: process.env.REDIS_HOST || 'localhost',
 		port: process.env.REDIS_PORT || 8888

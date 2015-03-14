@@ -9,6 +9,7 @@ var qs = require('querystring');
 var express = require('express');
 var passport = require('passport');
 var moment = require('moment');
+var request = require('request');
 
 var config = require('../conf/config');
 
@@ -128,15 +129,36 @@ router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => 
 	var agencyId = req.params.agencyId;
 	var lat = req.query.lat;
 	var lon = req.query.lon;
-	var distance = req.query.distance;
+	var distance = req.query.distance || 1000;
 	var date = req.params.date;
 
-	stopService.findNearestStopsByDate(agencyKey, lat, lon, distance, date).then((stops) => {
-		res.json(stops);
-	}).catch((err) => {
-		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-		res.status(500).json({message: err.message});
+	request({ url: `${config.services.gtfsApi.baseURL}/api/agencies/${agencyKey}/stops/${date}/nearest?lat=${lat}&lon=${lon}&distance=${distance}` }, (error, response, body) => {
+		if (error) {
+			logger.error(`[ERROR] Message: ${error.message} - ${error.stack}`);
+			res.status(500).json({message: error.message});
+		} else if (response.statusCode >= 300) {
+			var err = new Error(`HTTP status code: ${response.statusCode}`);
+			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+			res.status(500).json({message: err.message});
+		} else {
+			res.header("Content-Type", "application/json").send(body);
+		}
 	});
+
+	//
+	//var agencyKey = req.params.agencyKey;
+	//var agencyId = req.params.agencyId;
+	//var lat = req.query.lat;
+	//var lon = req.query.lon;
+	//var distance = req.query.distance || 1000;
+	//var date = req.params.date;
+	//
+	//stopService.findNearestStopsByDate(agencyKey, lat, lon, distance, date).then((stops) => {
+	//	res.json(stops);
+	//}).catch((err) => {
+	//	logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+	//	res.status(500).json({message: err.message});
+	//});
 });
 
 

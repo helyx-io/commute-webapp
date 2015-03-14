@@ -10,9 +10,12 @@ var express = require('express');
 var moment = require('moment');
 var passport = require('passport');
 var qs = require('querystring');
+var request = require('request');
 
 var logger = require('../log/logger');
 var security = require('../lib/security');
+
+var config = require('../conf/config');
 
 var calendars = require('./calendars');
 var calendarDates = require('./calendarDates');
@@ -119,40 +122,56 @@ router.get('/', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
 router.get('/nearest', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 
-	agencyService.findNearestAgencies({ lat:req.query.lat , lon: req.query.lon }).then((agency) => {
+	var lat = req.query.lat;
+	var lon = req.query.lon;
 
-		agency.links = [{
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}`,
-			"rel": "http://gtfs.helyx.io/api/agency",
-			"title": `Agency '${agency.agency_id}'`
-		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/routes`,
-			"rel": "http://gtfs.helyx.io/api/routes",
-			"title": `Routes`
-		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/trips`,
-			"rel": "http://gtfs.helyx.io/api/trips",
-			"title": `Trips`
-		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/stops`,
-			"rel": "http://gtfs.helyx.io/api/stops",
-			"title": `Stops`
-		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendars`,
-			"rel": "http://gtfs.helyx.io/api/calendars",
-			"title": `Calendars`
-		}, {
-			"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendar-dates`,
-			"rel": "http://gtfs.helyx.io/api/calendar-dates",
-			"title": `Calendar dates`
-		}];
-
-		res.json(format(agency));
-
-	}).catch((err) => {
-		logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
-		res.status(500).json({message: err.message});
+	request({ url: `${config.services.gtfsApi.baseURL}/api/agencies/nearest?lat=${lat}&lon=${lon}` }, (error, response, body) => {
+		if (error) {
+			logger.error(`[ERROR] Message: ${error.message} - ${error.stack}`);
+			res.status(500).json({message: error.message});
+		} else if (response.statusCode >= 300) {
+			var err = new Error(`HTTP status code: ${response.statusCode}`);
+			logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+			res.status(500).json({message: err.message});
+		} else {
+			res.header("Content-Type", "application/json").send(body);
+		}
 	});
+
+	//agencyService.findNearestAgencies({ lat:req.query.lat , lon: req.query.lon }).then((agency) => {
+	//
+	//	agency.links = [{
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}`,
+	//		"rel": "http://gtfs.helyx.io/api/agency",
+	//		"title": `Agency '${agency.agency_id}'`
+	//	}, {
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/routes`,
+	//		"rel": "http://gtfs.helyx.io/api/routes",
+	//		"title": `Routes`
+	//	}, {
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/trips`,
+	//		"rel": "http://gtfs.helyx.io/api/trips",
+	//		"title": `Trips`
+	//	}, {
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/stops`,
+	//		"rel": "http://gtfs.helyx.io/api/stops",
+	//		"title": `Stops`
+	//	}, {
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendars`,
+	//		"rel": "http://gtfs.helyx.io/api/calendars",
+	//		"title": `Calendars`
+	//	}, {
+	//		"href": `${baseApiURL(req)}/agencies/${agency.agency_key}/calendar-dates`,
+	//		"rel": "http://gtfs.helyx.io/api/calendar-dates",
+	//		"title": `Calendar dates`
+	//	}];
+	//
+	//	res.json(format(agency));
+	//
+	//}).catch((err) => {
+	//	logger.error(`[ERROR] Message: ${err.message} - ${err.stack}`);
+	//	res.status(500).json({message: err.message});
+	//});
 
 });
 

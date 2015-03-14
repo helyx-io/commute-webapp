@@ -70,8 +70,8 @@ gtfsApp.factory('Globals', function($rootScope) {
 		if (!globals.position && globals.agencies && globals.agencies.length > 0) {
 			globals.position = {
 				coord: {
-					latitude: (global.agencies[0].agency_min_lat + global.agencies[0].agency_max_lat) / 2,
-					longitude: (global.agencies[0].agency_min_lon + global.agencies[0].agency_max_lon) / 2
+					latitude: (global.agencies[0].min_lat + global.agencies[0].max_lat) / 2,
+					longitude: (global.agencies[0].min_lon + global.agencies[0].max_lon) / 2
 				}
 			};
 		}
@@ -113,20 +113,20 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 		var position = Globals.position;
 
 		$rootScope.$broadcast('stopsReset');
-		_(agencies).pluck('agency_key').uniq().forEach(function (agencyKey) {
+		_(agencies).pluck('key').uniq().forEach(function (agencyKey) {
 			StopService.fetchNearestStops(agencyKey, position.coords.latitude, position.coords.longitude, Globals.distance).then(function(stops) {
 
 				var now = moment();
 
 				stops.forEach(function(stop) {
-					stop.lines.forEach(function(line) {
-						if (!line.name) {
-							line.name = 'N/A';
+					stop.routes.forEach(function(route) {
+						if (!route.name) {
+							route.name = 'N/A';
 						}
 
-						line.name = line.name.substr(0, 3);
+						route.name = route.name.substr(0, 3);
 
-						line.stop_times = _.chain(line.stop_times)
+						route.stop_times = _.chain(route.stop_times)
 						.filter(function(stopTime) {
 							return moment(stopTime, 'HH:mm').isAfter(now);
 						})
@@ -140,16 +140,16 @@ gtfsApp.run(function($rootScope, Globals, AgencyService, StopService) {
 						})
 						.value();
 
-						line.stop_times = line.stop_times.slice(0, 10);
+						route.stop_times = route.stop_times.slice(0, 10);
 					});
 
-					stop.lines = _.filter(stop.lines, function(line) {
-						return line.stop_times.length > 0;
+					stop.routes = _.filter(stop.routes, function(route) {
+						return route.stop_times.length > 0;
 					});
 				});
 
 				stops = _.filter(stops, function(stop) {
-					return stop.lines.length > 0;
+					return stop.routes.length > 0;
 				});
 
 				$rootScope.$broadcast('stopsLoaded', stops);
@@ -362,13 +362,13 @@ google.maps.StopMarker.prototype.legend = function() {
 	var legend = '<b>' + stop.name.capitalize() + '</b> - <i><small>' + distance + ' km</small></i>' +
 		(this.address() ? '<br>' + this.address() : '') + '<br>';
 
-	legend += 'Lignes: <ul>' + _(stop.lines).uniq('name').map(function(line) {
-		var background = line.route_color;
-		var whiteBackground = !background || background == 'FFFFFF';
-		var color = line.route_text_color;
-		var name = line.name.substr(0, 3);
+	legend += 'Lignes: <ul>' + _(stop.routes).uniq('name').map(function(route) {
+		var background = route.route_color;
+		var whiteBackground = !background || background == 'FFFFFF';
+		var color = route.route_text_color;
+		var name = route.name.substr(0, 3);
 		var borderStyle = whiteBackground ? '1px solid #DDD' : '1px solid #' + background;
-		return '<li class="sm-line" style="background: #' + background + '; color: #' + color + '; border: ' + borderStyle + '">' + name + '</span>';
+		return '<li class="sm-route" style="background: #' + background + '; color: #' + color + '; border: ' + borderStyle + '">' + name + '</span>';
 	}).join('') + '</ul>';
 
 	return legend;
@@ -527,7 +527,7 @@ gtfsApp.controller('StopLinesController', function() {
 gtfsApp.controller('StopLineController', function($scope) {
 
 	$scope.showContent = false;
-	$scope.nextStopTime = Math.floor( moment($scope.line.stop_times[0], 'HH:mm').diff(moment()) / 1000 / 60).toFixed(0);
+	$scope.nextStopTime = Math.floor( moment($scope.route.stop_times[0], 'HH:mm').diff(moment()) / 1000 / 60).toFixed(0);
 
 	$scope.toggleContent = function() {
 		$scope.showContent = !$scope.showContent;

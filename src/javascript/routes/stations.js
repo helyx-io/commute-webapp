@@ -115,7 +115,7 @@ router.get('/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => {
 	var agencyKey = req.params.agencyKey;
 	var lat = req.query.lat;
 	var lon = req.query.lon;
-	var distance = req.query.distance;
+	var distance = req.query.distance || 1000;
 	var db = DB.schema(agencyKey);
 
 	var start = Date.now();
