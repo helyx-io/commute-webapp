@@ -45,7 +45,7 @@ module.exports = {
 	},
 	services: {
 		gtfsApi: {
-			baseURL: process.env.GTFS_API_BASE_URL || "http://localhost:3000"
+			baseURL: process.env.GTFS_API_BASE_URL || "http://localhost:4000"
 		}
 	},
 	redis: {

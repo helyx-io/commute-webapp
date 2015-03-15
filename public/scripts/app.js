@@ -527,7 +527,9 @@ gtfsApp.controller('StopLinesController', function() {
 gtfsApp.controller('StopLineController', function($scope) {
 
 	$scope.showContent = false;
-	$scope.nextStopTime = Math.floor( moment($scope.route.stop_times[0], 'HH:mm').diff(moment()) / 1000 / 60).toFixed(0);
+	var nextStopTime = moment($scope.route.stop_times[0], 'HH:mm');
+	var now = moment();
+	$scope.nextStopTime = Math.floor( nextStopTime.diff(now) / 1000 / 60 + (nextStopTime.isAfter(now) ? 0 : 24 * 60)).toFixed(0);
 
 	$scope.toggleContent = function() {
 		$scope.showContent = !$scope.showContent;
