@@ -1,0 +1,7 @@
+build
+node_modules
+test
+public/bower_components
+client
+.git
+.gitignore
