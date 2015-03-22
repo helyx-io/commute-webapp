@@ -6,6 +6,9 @@ var passport = require('passport');
 var config = require('./conf/config');
 var logger = require('./log/logger');
 
+console.log(`env: ${JSON.stringify(process.env, undefined, 2)}`);
+console.log(`config: ${JSON.stringify(config, undefined, 2)}`);
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Application Initialization

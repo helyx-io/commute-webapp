@@ -8,6 +8,7 @@ build-cov
 node_modules
 .sass-cache
 npm-debug.log
+*.env
 cert
 certs
 newrelic_agent.log

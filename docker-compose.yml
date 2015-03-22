@@ -1,0 +1,15 @@
+webapp:
+  build: .
+  command: iojs app.js
+  ports:
+    - "9000:9000"
+  links:
+    - ssdb
+  env_file:
+    - 'webapp.env'
+ssdb:
+  image: huangml/ssdb:latest
+  volumes:
+    - /var/lib/ssdb/gtfs:/ssdb/data
+  ports:
+    - "8888"

@@ -1,4 +1,5 @@
 FROM iojs:1.5
+MAINTAINER Alexis Kinsella <akinsella@helyx.org>
 
 RUN apt-get update
 RUN apt-get install -y git curl build-essential make --force-yes
@@ -20,3 +21,7 @@ COPY src /usr/src/app/src
 RUN node_modules/gulp/bin/gulp.js
 
 EXPOSE 9000
+
+WORKDIR /usr/src/app/build
+
+CMD ["node", "app.js"]

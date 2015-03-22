@@ -17,12 +17,12 @@ var db = {
 	}
 };
 
-var env = process.env.NODE_ENV || 'development';
+var env = process.env.NODE_ENV || 'development';
 
 module.exports = {
 	env: env,
-	hostname: process.env.APP_HOSTNAME || 'gtfs.helyx.org',
-	port: process.env.APP_HTTP_PORT || 9000,
+	hostname: process.env.APP_HOSTNAME || 'commute.sh',
+	port: process.env.APP_HTTP_PORT || 9000,
 	appname: appName,
 	auth: {
 		admin: (process.env.AUTH_ADMIN || 'alexis.kinsella@gmail.com').split(','),
@@ -49,8 +49,8 @@ module.exports = {
 		}
 	},
 	redis: {
-		host: process.env.REDIS_HOST || 'localhost',
-		port: process.env.REDIS_PORT || 8888
+		host: process.env.REDIS_HOST || process.env.SSDB_PORT_8888_TCP_ADDR || 'localhost',
+		port: process.env.REDIS_PORT || process.env.SSDB_PORT_8888_TCP_PORT || 8888
 	},
 	db: db,
 	monitoring: {
