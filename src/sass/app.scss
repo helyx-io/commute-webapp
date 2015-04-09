@@ -420,20 +420,20 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0px;
 }
 
-.lines {
+.routes {
 }
 
-.line-content {
+.route-content {
   text-align: center;
 }
 
-.line {
+.route {
   width: 100%;
   padding: 0px;
   vertical-align: top;
 }
 
-#stops .line-title {
+#stops .route-title {
 
   margin: 0px;
   padding: 0px;
@@ -513,7 +513,7 @@ h1, h2, h3, h4, h5, h6 {
 
 }
 
-div.line ul {
+div.route ul {
   margin: 0;
   padding: 10px 5px;
   background: #FCFCFC;
@@ -532,7 +532,6 @@ ul.stop-times li {
   }
 
 }
-
 
 div.gm-style-iw {
   ul {

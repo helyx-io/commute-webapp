@@ -372,47 +372,47 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0px;
 }
 
-.line-content {
+.route-content {
   text-align: center;
 }
 
-.line {
+.route {
   width: 100%;
   padding: 0px;
   vertical-align: top;
 }
 
-#stops .line-title {
+#stops .route-title {
   margin: 0px;
   padding: 0px;
   height: 34px;
   background: #F6F6F6;
 }
-#stops .line-title h3 {
+#stops .route-title h3 {
   margin: 0px 0px 0px 60px;
   padding-top: 5px;
   line-height: 12px;
   font-size: 12px;
   color: #444;
 }
-#stops .line-title h4 {
+#stops .route-title h4 {
   margin: 0px 0px 0px 60px;
   line-height: 12px;
   font-size: 12px;
   color: #444;
 }
-#stops .line-title .nextStopTime {
+#stops .route-title .nextStopTime {
   display: inline-block;
   font-size: 12px;
   vertical-align: top;
   line-height: 24px;
 }
-#stops .line-title .transportType {
+#stops .route-title .transportType {
   display: inline-block;
   vertical-align: baseline;
   height: 26px;
 }
-#stops .line-title aside.left {
+#stops .route-title aside.left {
   float: left;
   white-space: nowrap;
   overflow: hidden;
@@ -423,11 +423,11 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
   text-align: center;
 }
-#stops .line-title aside.right {
+#stops .route-title aside.right {
   float: right;
   margin: 4px 10px 0px 10px;
 }
-#stops .line-title aside.right button {
+#stops .route-title aside.right button {
   margin: 0px;
   padding: 0px;
   width: 24px;
@@ -436,7 +436,7 @@ h1, h2, h3, h4, h5, h6 {
   border: none;
   outline: none;
 }
-#stops .line-title aside.right button svg {
+#stops .route-title aside.right button svg {
   fill: #005f7f;
   margin: 2px 0px;
   padding: 0px;
@@ -444,7 +444,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 20px;
 }
 
-div.line ul {
+div.route ul {
   margin: 0;
   padding: 10px 5px;
   background: #FCFCFC;
