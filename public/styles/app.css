@@ -394,12 +394,18 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 12px;
   font-size: 12px;
   color: #444;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 #stops .route-title h4 {
   margin: 0px 0px 0px 60px;
   line-height: 12px;
   font-size: 12px;
   color: #444;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 #stops .route-title .nextStopTime {
   display: inline-block;
