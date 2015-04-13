@@ -125,7 +125,11 @@ router.get('/nearest', /*security.ensureJWTAuthenticated,*/ (req, res) => {
 	var lat = req.query.lat;
 	var lon = req.query.lon;
 
-	request({ url: `${config.services.gtfsApi.baseURL}/api/agencies/nearest?lat=${lat}&lon=${lon}` }, (error, response, body) => {
+	var url = `${config.services.gtfsApi.baseURL}/api/agencies/nearest?lat=${lat}&lon=${lon}`
+
+	logger.info(`Url: ${url}`)
+
+	request({ url: url }, (error, response, body) => {
 		if (error) {
 			logger.error(`[ERROR] Message: ${error.message} - ${error.stack}`);
 			res.status(500).json({message: error.message});

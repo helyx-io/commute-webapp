@@ -132,7 +132,10 @@ router.get('/:date/nearest'/*, security.ensureJWTAuthenticated*/, (req, res) => 
 	var distance = req.query.distance || 1000;
 	var date = req.params.date;
 
-	request({ url: `${config.services.gtfsApi.baseURL}/api/agencies/${agencyKey}/stops/${date}/nearest?lat=${lat}&lon=${lon}&distance=${distance}` }, (error, response, body) => {
+	var url = `${config.services.gtfsApi.baseURL}/api/agencies/${agencyKey}/stops/${date}/nearest?lat=${lat}&lon=${lon}&distance=${distance}`
+	logger.info(`Url: ${url}`)
+
+	request({ url: url }, (error, response, body) => {
 		if (error) {
 			logger.error(`[ERROR] Message: ${error.message} - ${error.stack}`);
 			res.status(500).json({message: error.message});
