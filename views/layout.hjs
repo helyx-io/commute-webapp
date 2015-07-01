@@ -4,21 +4,33 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Helyx.io - {{ title }}</title>
+    <title>Commute.sh - {{ title }}</title>
+    <link href='//fonts.googleapis.com/css?family=Muli:100,300,500,700' rel='stylesheet' type='text/css'>
     <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
 
+    <!-- build:css styles/lib.css -->
+    <!--<link rel="stylesheet" href="/styles/bootstrap.css" />-->
+    <!-- endbuild -->
+
+    <!-- build:app_css styles/app.css -->
     <link rel="stylesheet" href="/styles/app.css" />
-    <link rel="stylesheet" media="screen" href="/styles/login-styles.css">
-    <link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />
-    <link rel="stylesheet" href="/bower_components/foundation/css/normalize.css" />
+    <!-- endbuild -->
 
-    <script src="/bower_components/modernizr/modernizr.js"></script>
+    <!-- build:js scripts/lib.js -->
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/foundation/js/foundation.min.js"></script>
     <script src="/bower_components/moment/min/moment.min.js"></script>
-    <script src="/bower_components/handlebars/handlebars.min.js"></script>
 
+    <script src="/bower_components/angular/angular.min.js"></script>
+    <!--<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>-->
+    <script src="/bower_components/angular-ui-router/release/angular-ui-router.min.js"></script>
+    <script src="/bower_components/lodash/dist/lodash.min.js"></script>
+    <!-- endbuild -->
+
+    <script src="//maps.googleapis.com/maps/api/js?v=3.exp"></script>
+
+    <!-- build:app_js scripts/app.js -->
     <script src="/scripts/app.js"></script>
+    <!-- endbuild -->
 
     <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png" />
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png" />
@@ -33,22 +45,22 @@
     <meta name="msapplication-TileImage" content="/mstile-144x144.png" />
 </head>
 <body>
-    <div id="container">
-        {{{ yield }}}
-    </div>
-    <script type="text/javascript">
-        /*
-					var _gaq = _gaq || [];
-					_gaq.push(['_setAccount', 'UA-1889791-20']);
-					_gaq.push(['_trackPageview']);
+<div id="container">
+	{{{ yield }}}
+</div>
+<script type="text/javascript">
+    /*
+			var _gaq = _gaq || [];
+			_gaq.push(['_setAccount', 'UA-1889791-30']);
+			_gaq.push(['_trackPageview']);
 
-					(function() {
-					var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-					ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-					var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-					})();
-		*/
-    </script>
+			(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+			})();
+*/
+</script>
 
 </body>
 </html>

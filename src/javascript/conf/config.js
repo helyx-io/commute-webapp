@@ -2,27 +2,30 @@
 // Exports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var appName = 'helyx.io';
+var appName = 'commute.sh';
 
 var db = {
-	dialect: 'mysql2', // Perf gain: 350ms / 400ms
-	database: process.env.MYSQL_DATABASE || 'gtfs',
-	host: process.env.MYSQL_HOSTNAME || 'localhost',
-	port: process.env.MYSQL_PORT || 3306,
-	username: process.env.MYSQL_USERNAME || 'gtfs',
-	password: process.env.MYSQL_PASSWORD || 'gtfs',
+	dialect: 'pg',
+	database: process.env.DB_DATABASE || 'commute',
+	host: process.env.DB_HOSTNAME || 'localhost',
+	port: process.env.DB_PORT || 5432,
+	username: process.env.DB_USERNAME || 'commute',
+	password: process.env.DB_PASSWORD || 'commute',
 	pool: {
-		min: process.env.MYSQL_POOL_MIN || 0,
-		max: process.env.MYSQL_POOL_MAX || 256
+		min: process.env.DB_POOL_MIN || 0,
+		max: process.env.DB_POOL_MAX || 256
 	}
 };
+
+db.url = `${db.dialect}://${db.username}:${db.password}@${db.host}:${db.port}/${db.database}?sslmode=disable`;
 
 var env = process.env.NODE_ENV || 'development';
 
 module.exports = {
-	env: env,
-	hostname: process.env.APP_HOSTNAME || 'commute.sh',
-	port: process.env.APP_HTTP_PORT || 9000,
+	env: process.env.NODE_ENV || 'development',
+	scheme: process.env.APP_SCHEME || 'http',
+	host: process.env.APP_HOST || 'localhost',
+	port: process.env.APP_PORT || process.env.PORT || 9000,
 	appname: appName,
 	auth: {
 		admin: (process.env.AUTH_ADMIN || 'alexis.kinsella@gmail.com').split(','),
@@ -43,8 +46,20 @@ module.exports = {
 			filename: process.env.LOGGER_FILE_FILENAME || ("" + appName + "/logs.log")
 		}
 	},
-	services: {
-		gtfsApi: {
+	admin: {
+		username: process.env.ADMIN_USERNAME || 'admin',
+		password: process.env.ADMIN_PASSWORD || 'admin'
+	},
+	import: {
+		users: {
+		filePath: process.env.IMPORT_USERS_PATH || 'data/users.csv'
+		}
+	},
+	service: {
+		mandrill: {
+			apiKey: process.env.MANDRILL_API_KEY
+		},
+		commute: {
 			baseURL: process.env.GTFS_API_BASE_URL || "http://localhost:4000"
 		}
 	},
@@ -56,7 +71,7 @@ module.exports = {
 	monitoring: {
 		newrelic: {
 			apiKey: process.env.NEW_RELIC_API_KEY,
-			appName: process.env.NEW_RELIC_APP_NAME || 'gtfs-webapp'
+			appName: process.env.NEW_RELIC_APP_NAME || 'commute-webapp'
 		}
 	}
 };

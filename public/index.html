@@ -1,148 +1,121 @@
 <!doctype html>
-<html lang="fr" ng-app="gtfsApp">
+<html lang="fr" ng-app="commuteApp">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 
     <title>Commute</title>
-    <link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>
+    <!--<link href='//fonts.googleapis.com/css?family=Muli' rel='stylesheet' type='text/css'>-->
+    <!--<link href='//fonts.googleapis.com/css?family=Lobster' rel='stylesheet' type='text/css'>-->
+    <!--<link href='//fonts.googleapis.com/css?family=Ubuntu:300,700' rel='stylesheet' type='text/css'>-->
 
 
     <!-- build:css styles/lib.css -->
-    <link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />
-    <link rel="stylesheet" href="/bower_components/foundation/css/normalize.css" />
+    <!--<link rel="stylesheet" href="/bower_components/foundation/css/foundation.css" />-->
+    <!--<link rel="stylesheet" href="/bower_components/foundation/css/normalize.css" />-->
     <!-- endbuild -->
+
+
+    <!--<link rel="stylesheet" href="/bower_components/ionic/css/ionic.min.css"/>-->
+
 
     <!-- build:app_css styles/app.css -->
+    <link rel="stylesheet" href="/styles/font.css" />
     <link rel="stylesheet" href="/styles/app.css" />
+    <link rel="stylesheet" href="/styles/ng-dialog.css" />
+    <link rel="stylesheet" href="/styles/ionicons.css" />
     <!-- endbuild -->
+
+    <script src="/bower_components/modernizr/modernizr.min.js"></script>
 
     <!-- build:js scripts/lib.js -->
-    <script src="/bower_components/modernizr/modernizr.min.js"></script>
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
-    <script src="/bower_components/foundation/js/foundation.min.js"></script>
-    <script src="/bower_components/moment/min/moment.min.js"></script>
-
-    <script src="/bower_components/angular/angular.min.js"></script>
-    <script src="/bower_components/lodash/dist/lodash.min.js"></script>
+    <script src="/bower_components/jquery/dist/jquery.js"></script>
+    <!--<script src="/bower_components/foundation/js/foundation.min.js"></script>-->
+    <script src="/bower_components/fastclick/lib/fastclick.js"></script>
+    <script src="/bower_components/moment/moment.js"></script>
+    <script src="/bower_components/angular/angular.js"></script>
+    <!--<script src="/bower_components/angular-bootstrap/ui-bootstrap-tpls.js"></script>-->
+    <script src="/bower_components/angular-ui-router/release/angular-ui-router.js"></script>
+    <script src="/bower_components/angular-animate/angular-animate.js"></script>
+    <script src="/bower_components/angular-sanitize/angular-sanitize.js"></script>
+    <script src="/bower_components/ngDialog/js/ngDialog.js"></script>
+    <script src="/bower_components/lodash/dist/lodash.js"></script>
     <!-- endbuild -->
+
+<!--
+    <script src="/bower_components/ionic/js/ionic.js"></script>
+    <script src="/bower_components/ionic/js/ionic-angular.js"></script>
+-->
 
     <script src="//maps.googleapis.com/maps/api/js?v=3.exp"></script>
 
     <!-- build:app_js scripts/app.js -->
+    <script src="/scripts/base.js"></script>
+    <script src="/scripts/util.js"></script>
+    <script src="/scripts/activities.js"></script>
+    <script src="/scripts/auth.js"></script>
     <script src="/scripts/app.js"></script>
+    <script src="/scripts/gmap.js"></script>
+    <script src="/scripts/gtfs.js"></script>
+    <script src="/scripts/map.js"></script>
+    <script src="/scripts/router.js"></script>
     <!-- endbuild -->
 
-    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-touch-icon-57x57.png" />
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114x114.png" />
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72x72.png" />
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144x144.png" />
-    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/apple-touch-icon-120x120.png" />
-    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="57x57" href="/apple-icon-57x57.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-icon-114x114.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-icon-72x72.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-icon-144x144.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="120x120" href="/apple-icon-120x120.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="152x152" href="/apple-icon-152x152.png" />
     <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32" />
     <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16" />
-    <meta name="application-name" content="Helyx.io"/>
-    <meta name="msapplication-TileColor" content="#345D79" />
-    <meta name="msapplication-TileImage" content="/mstile-144x144.png" />
+    <meta name="application-name" content="Commute"/>
+    <meta name="msapplication-TileColor" content="#333333" />
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
 </head>
 <body>
 
-<div id="content" ng-controller="AppController">
 
-    <div id="header" ng-controller="HeaderController">
+<div id="content" ng-controller="AppCtrl">
 
-        <div id="settings" ng-controller="SettingsController">
-            <button id="btn-calendar" class="selected" ng-click="toggleLeftSidebar()"><ng-include src="'/images/calendar48.svg'" alt="Calendar" /></button>
-            <button id="btn-stops" class="selected" ng-click="toggleRightSidebar()"><ng-include src="'/images/two114.svg'" alt="stops" /></button>
-            <button id="btn-settings"><ng-include src="'/images/settings20.svg'" alt="Settings" /></button>
+    <div id="header" ng-controller="HeaderCtrl">
+
+        <div id="settings" ng-controller="SettingsCtrl">
+            <button id="btn-calendar" class="selected" ng-click="toggleLeftSidebar()">
+                <span><i class="icon ion-calendar"></i></span>
+            </button>
+            <button id="btn-stops" class="selected" ng-click="toggleRightSidebar()">
+                <span><i class="icon ion-grid"></i></span>
+            </button>
+            <button id="btn-settings">
+                <span><i class="icon ion-gear-a"></i></span>
+            </button>
+            <button id="btn-logout" ng-click="logout()">
+                <span><i class="icon ion-android-exit"></i></span>
+            </button>
         </div>
 
         <div id="header-date">
-            <button id="btn-date-previous"><ng-include src="'/images/arrow395.svg'" alt="stops" /></button>
+            <button id="btn-date-previous">
+                <span><i class="icon ion-chevron-left"></i></span>
+            </button>
             <h1>{{date}}</h1>
-            <button id="btn-date-next"><ng-include src="'/images/arrow396.svg'" alt="stops" /></button>
+            <button id="btn-date-next">
+                <span><i class="icon ion-chevron-right"></i></span>
+            </button>
         </div>
+
+        <h1>
+            <span><i class="icon ion-android-bus"></i></span>
+            Commute<span>.sh</span>
+        </h1>
+
     </div>
 
-    <div id="main" ng-cloak ng-controller="MainController">
-
-        <div id="sidebar-left" ng-show="showLeftSidebar">
-            <div id="sidebar-left-content">
-                <div id="sidebar-calendar-container" ng-cloak ng-controller="SidebarCalendarController">
-                    <div id="sidebar-calendar">
-                        <h1>Calendar</h1>
-                        <div id="days">
-                            <div id="day-{{index}}" ng-repeat="day in days" class="day {{day._class}}">
-                                <aside>{{day.day}}</aside>
-                                <h4>{{day.weekDay}}</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="main-content">
-            <div id="map" ng-cloak ng-controller="MapController">
-                <div id="map-canvas"></div>
-            </div>
-        </div>
-
-        <div id="sidebar-right">
-
-            <div id="sidebar-right-content" ng-show="showRightSidebar">
-
-                <div id="stops" ng-cloak ng-controller="StopsController">
-                    <div class="search">
-                        <input id="serch-filter" type="text" placeholder="Rechercher" ng-model="searchFilter" ng-change="onSearchFilterChange()" />
-                    </div>
-
-                    <div id="stop-row-{{index}}" class="stop" ng-repeat="stop in stops" ng-controller="StopController">
-                        <div class="stop-title" ng-click="stopSelect()">
-                            <aside>
-                                {{::(stop.distance / 1000).toFixed(3)}} km
-                            </aside>
-                            <h2>{{::stop.name}}</h2>
-                            <h3>{{::stop.desc}}</h3>
-                        </div>
-                        <div id="stop-time-{{stop.index}}" class="stop-content" ng-controller="StopLinesController">
-                            <div class="route" ng-repeat="route in stop.routes" ng-controller="StopLineController">
-                                <div class="route-title" ng-click="toggleContent()">
-                                    <aside class="left" style="background-color:#{{route.route_color}}; color:#{{route.route_text_color}};">{{::route.name}}</aside>
-                                    <aside class="right" ng-switch on="route.route_type" style="white-space: nowrap;">
-                                        <span class="nextStopTime" ng-show="nextStopTime">{{::nextStopTime}} min.</span>
-                                        <div class="transportType" style="display: inroute-block;">
-                                            <div class="animate-switch" ng-switch-when="1"><button><ng-include src="'/images/metro.svg'" alt="Metro" /></button></div>
-                                            <div class="animate-switch" ng-switch-when="2"><button><ng-include src="'/images/train.svg'" alt="Train" /></button></div>
-                                            <div class="animate-switch" ng-switch-when="3"><button><ng-include src="'/images/bus.svg'" alt="Bus" /></button></div>
-                                            <div class="animate-switch" ng-switch-when="4">Ferry</div>
-                                            <div class="animate-switch" ng-switch-when="5">Téléphérique</div>
-                                            <div class="animate-switch" ng-switch-when="6">Gondole</div>
-                                            <div class="animate-switch" ng-switch-when="7">Féniculaire</div>
-                                            <div class="animate-switch" ng-switch-default>default</div>
-                                        </div>
-                                    </aside>
-                                    <h3>{{::route.first_stop_name}}</h3>
-                                    <h4>{{::route.last_stop_name}}</h4>
-                                </div>
-                                <div class="route-content" ng-show="showContent">
-                                    <ul class="stop-times">
-                                        <li ng-repeat="stop_time in route.stop_times">
-                                            {{::stop_time}}
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
+    <div ui-view ng-cloak class="view-animate ui-view-main"></div>
 
     <div id="footer">
-        <h1>Copyright 2015 - Helyx.io</h1>
+        <h1>Helyx<span>.io</span></h1>
     </div>
 
 </div>
@@ -153,8 +126,12 @@
             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
-    ga('create', 'UA-1889791-26', 'auto');
+    ga('create', 'UA-1889791-31', 'auto');
     ga('send', 'pageview');
+
+    $(function() {
+        FastClick.attach(document.body);
+    });
 </script>
 
 </body>

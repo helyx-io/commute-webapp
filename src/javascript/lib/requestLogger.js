@@ -5,7 +5,7 @@
 var util = require('util');
 var uuid = require('uuid');
 
-var logger = require('../log/logger');
+var logger = require('../lib/logger');
 
 
 ////////////////////////////////////////////////////////////////////////////////////

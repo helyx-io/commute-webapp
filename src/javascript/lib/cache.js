@@ -2,7 +2,7 @@ var Promise = require('bluebird');
 var util = require('util');
 var events = require('events');
 
-var logger = require('../log/logger');
+var logger = require('./logger');
 
 var counter = 0;
 

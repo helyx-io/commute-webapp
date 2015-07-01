@@ -45,6 +45,11 @@ gulp.task('copy-public-html', function () {
 		.pipe(gulp.dest('build/public'));
 });
 
+gulp.task('copy-public-images', function () {
+	return gulp.src(['public/images/**/*.png', 'public/**/*.gif', 'public/**/*.jpg', 'public/**/*.jpeg'])
+		.pipe(gulp.dest('build/public/images'));
+});
+
 gulp.task('usemin-public-html', function () {
 	return gulp.src('public/index.html')
 		.pipe(usemin({

@@ -1,0 +1,29 @@
+@font-face {
+    font-family: '"Ionicons"';
+    src:
+        url('../fonts/ionicons/ionicons.eot') format('eot'),
+        url('../fonts/ionicons/ionicons.woff') format('woff'),
+        url('../fonts/ionicons/ionicons.ttf') format('truetype'),
+        url('../fonts/ionicons/ionicons.svg#Ionicons') format('svg');
+}
+
+@font-face {
+    font-family: 'Lobster';
+    src: url('../fonts/lobster/Lobster.eot') format('eot'), url('../fonts/lobster/Lobster.woff') format('woff'),  url('../fonts/lobster/Lobster.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'Muli';
+    src: url('../fonts/Muli/Muli-Regular.eot') format('eot'), url('../fonts/Muli/Muli-Regular.woff') format('woff'), url('../fonts/Muli/Muli-Regular.ttf') format('truetype');
+}
+
+button {
+    vertical-align: top;
+}
+
+button .icon {
+    font-size: 32px;
+    font-weight: 100;
+    line-height: 32px;
+    color: #ffffff;
+}

@@ -196,7 +196,7 @@ var createSchemaConnection = function(agencyId) {
 };
 
 var schemas = {
-	gtfs: createSchemaConnection()
+	commute: createSchemaConnection()
 };
 
 var schema = function (agencyId) {

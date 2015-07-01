@@ -9,6 +9,9 @@
 var express = require('express');
 var security = require('../lib/security');
 
+var apiRoute = require('./apiRoute');
+var adminRoute = require('./admin');
+
 
 ////////////////////////////////////////////////////////////////////////////////////
 // Routes
@@ -17,6 +20,10 @@ var security = require('../lib/security');
 var router = express.Router();
 
 router.get("/", (req, res) => res.redirect('/index.html'));
+router.use('/admin', adminRoute);
+router.use('/api', apiRoute);
+
+router.get("/healthcheck", (req, res) => res.status(200).end());
 
 router.get('/login', (req, res) => {
   res.render('login');

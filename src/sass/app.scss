@@ -1,5 +1,5 @@
 * {
-  font-family: "Helvetica Neue";
+  font-family: "Helvetica Neue", sans-serif;
   font-weight: 100;
   color: #666666;
 }
@@ -10,14 +10,15 @@ body {
   overflow: hidden;
 }
 
-[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
-  display: none !important;
-}
+//[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+//  display: none !important;
+//}
+//
+//.ng-hide-add, .ng-hide-remove {
+//  /* ensure visibility during the transition */
+//  display: block !important; /* yes, important */
+//}
 
-.ng-hide-add, .ng-hide-remove {
-  /* ensure visibility during the transition */
-  display: block !important; /* yes, important */
-}
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: 100;
@@ -28,18 +29,46 @@ h1, h2, h3, h4, h5, h6 {
 
 #header {
   position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 50px;
+  background: #333;
+
+  >h1 {
+    white-space: nowrap;
+    display: block;
+    color: #f0f0f0;
+    top: 0;
+    width: 250px;
+    text-align: center;
+    font-size: 32px;
+    line-height: 50px;
+    font-family: Lobster, sans-serif;
+    vertical-align: baseline;
+    padding: 0;
+    margin: 0 auto;
+
+    >span i:before {
+      color: #f0f0f0;
+      font-size: 28px;
+    }
+
+    span {
+      color: #ff6020;
+      font-size: 24px;
+      font-weight: 100;
+      font-family: Lobster, sans-serif;
+    }
+  }
 }
 
 #sidebar-left {
   position: absolute;
-  top: 0px;
-  left: 0px;
+  top: 0;
+  left: 0;
   width: 240px;
-  bottom: 0px;
+  bottom: 0;
   background: #FFFFFF;
   border-right: #E0E0E0 1px solid;
 
@@ -50,18 +79,18 @@ h1, h2, h3, h4, h5, h6 {
 
 #sidebar-left-header {
   position: absolute;
-  top: 0px;
-  left: 0px;
-  right: 0px;
+  top: 0;
+  left: 0;
+  right: 0;
   height: 50px;
 }
 
 #sidebar-left-content {
   position: absolute;
-  left: 0px;
-  right: 0px;
-  top: 0px;
-  bottom: 0px;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
 }
@@ -70,33 +99,34 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   width: 100%;
   top: 50px;
-  bottom: 32px;
+//  bottom: 24px;
+  bottom: 0;
 }
 
 #main-content {
   position: absolute;
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   left: 240px;
   right: 380px;
-  top: 0px;
-  bottom: 0px;
+  top: 0;
+  bottom: 0;
 
   &.left-full {
-    left: 0px;
+    left: 0;
   }
 
   &.right-full {
-    right: 0px;
+    right: 0;
   }
 }
 
 #sidebar-right {
   position: absolute;
-  top: 0px;
-  right: 0px;
+  top: 0;
+  right: 0;
   width: 420px;
-  bottom: 0px;
+  bottom: 0;
   background: #FFFFFF;
   border-left: #E0E0E0 1px solid;
 
@@ -125,29 +155,48 @@ h1, h2, h3, h4, h5, h6 {
       height: 24px;
       text-align: center;
     }
+
+    input {
+      width: 100%;
+    }
   }
 }
 
 #footer {
+  display: none;
   position: absolute;
-  left: 0px;
-  right: 0px;
-  bottom: 0px;
-  height: 32px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
   margin: 0;
   padding: 0;
+
+  background: #333;
+
+  h1 {
+    text-align: right;
+    font-size: 12px;
+    color: #FFFFFF;
+    margin: 0;
+    padding: 5px 10px;
+
+    span {
+      color: #ff6020;
+    }
+  }
 }
 
 #map {
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
 }
 
 #map-canvas {
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
 
@@ -156,51 +205,51 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+button {
+  cursor: pointer;
+}
+
 #settings {
+  z-index: 10000;
   float: right;
   height: 50px;
   text-align: right;
 
   button {
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     width: 50px;
     height: 50px;
     background: none;
     border: none;
     outline: none;
+    cursor: pointer;
 
     &:hover {
-      background: #005f7f;
+      background: #000;
     }
 
-    svg {
-      fill: #ffffff;
-      margin: 8px 0px;
-      padding: 0px;
-      width: 32px;
-      height: 32px;
-    }
   }
 }
 
-#settings.selected {
-  background: #005673;
+#settings .selected {
+  background: #000;
 }
 
+
 #sidebar-calendar {
-  margin: 0px;
+  margin: 0;
 
   h1 {
-    margin: 10px 10px 0px 30px;
+    margin: 10px 10px 0 30px;
   }
 }
 
 #sidebar-stops {
-  margin: 0px;
+  margin: 0;
 
   h1 {
-    margin: 10px 10px 0px 30px;
+    margin: 10px 10px 0 30px;
   }
 }
 
@@ -208,7 +257,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .day {
-  margin: 2px 0px 2px 50px;
+  margin: 2px 0 2px 50px;
   padding: 2px 30px 2px 10px;
   cursor: pointer;
 
@@ -253,7 +302,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-stop {
-  margin: 2px 0px 2px 50px;
+  margin: 2px 0 2px 50px;
   padding: 2px 30px 2px 10px;
   cursor: pointer;
 
@@ -293,24 +342,25 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #header-date {
+  float: left;
   height: 50px;
-  margin: 0px 0px;
-  background: #007095;
+  margin: 0;
+  background: #333;
 
   h1 {
     display: inline-block;
-    vertical-align: top;
     font-weight: 100;
-    margin: 0px 10px;
-    padding: 5px 10px;
+    margin: 0;
+    padding: 0;
     font-size: 1.8em;
+    line-height: 1.8em;
     color: #FFFFFF;
   }
 
   button {
     display: inline-block;
-    margin: 0px;
-    padding: 0px;
+    margin: 0;
+    padding: 0;
     width: 50px;
     height: 50px;
     background: none;
@@ -318,39 +368,19 @@ h1, h2, h3, h4, h5, h6 {
     outline: none;
 
     &.selected {
-      background: #005673;
+      background: #000;
+      color: #ff6020!important;
     }
 
     &:hover {
-      background: #005f7f;
+      background: #000;
     }
 
-    svg {
-      fill: #ffffff;
-      margin: 8px 0px;
-      padding: 0px;
-      width: 32px;
-      height: 32px;
-    }
-
-  }
-}
-
-#footer {
-  margin: 0px 0px;
-  background: #007095;
-
-  h1 {
-    text-align: right;
-    font-size: 16px;
-    color: #FFFFFF;
-    margin: 0px;
-    padding: 5px 10px;
   }
 }
 
 #stops {
-  padding: 0px;
+  padding: 0;
   background: #FBFBFB;
 
   h1 {
@@ -362,7 +392,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   h2 {
-    margin: 5px 10px 0px 10px;
+    margin: 5px 10px 0 10px;
     font-size: 1.2em;
     color: #222222;
     text-overflow: ellipsis;
@@ -371,7 +401,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   h3 {
-    margin: 0px 10px 5px 10px;
+    margin: 0 10px 5px 10px;
     color: #AAAAAA;
     font-size: 0.9em;
     text-overflow: ellipsis;
@@ -381,14 +411,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stop {
-  margin-bottom: 0px;
+  margin-bottom: 0;
   background: #444444;
 }
 
 .stop-title {
   background: #e9e9e9;
-  margin: 0px;
-  padding: 2px 0px;
+  margin: 0;
+  padding: 2px 0;
   cursor: pointer;
 
   aside {
@@ -398,8 +428,8 @@ h1, h2, h3, h4, h5, h6 {
     margin: 5px 10px;
 
     button {
-      margin: 0px;
-      padding: 0px;
+      margin: 0;
+      padding: 0;
       width: 20px;
       height: 20px;
       background: none;
@@ -408,8 +438,8 @@ h1, h2, h3, h4, h5, h6 {
 
       svg {
         fill: #AAA;
-        margin: 2px 0px;
-        padding: 0px;
+        margin: 2px 0;
+        padding: 0;
         width: 16px;
         height: 16px;
       }
@@ -423,7 +453,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stop-content {
-  margin: 0px;
+  margin: 0;
 }
 
 .routes {
@@ -435,19 +465,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .route {
   width: 100%;
-  padding: 0px;
+  padding: 0;
   vertical-align: top;
 }
 
 #stops .route-title {
 
-  margin: 0px;
-  padding: 0px;
+  margin: 0;
+  padding: 0;
   height: 34px;
   background: #F6F6F6;
 
   h3 {
-    margin: 0px 0px 0px 60px;
+    margin: 0 0 0 60px;
     padding-top: 5px;
     line-height: 12px;
     font-size: 12px;
@@ -458,7 +488,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   h4 {
-    margin: 0px 0px 0px 60px;
+    margin: 0 0 0 60px;
     line-height: 12px;
     font-size: 12px;
     color: #444;
@@ -489,9 +519,11 @@ h1, h2, h3, h4, h5, h6 {
       overflow: hidden;
       text-overflow: ellipsis;
 
+      line-height: 30px;
+      height: 30px;
       font-size: 20px;
       width: 50px;
-      padding: 2px 0px;
+      padding: 2px 0;
       margin: 0;
       text-align: center;
     }
@@ -499,11 +531,11 @@ h1, h2, h3, h4, h5, h6 {
     &.right {
 
       float: right;
-      margin: 4px 10px 0px 10px;
+      margin: 4px 10px 0 10px;
 
       button {
-        margin: 0px;
-        padding: 0px;
+        margin: 0;
+        padding: 0;
         width: 24px;
         height: 24px;
         background: none;
@@ -512,8 +544,8 @@ h1, h2, h3, h4, h5, h6 {
 
         svg {
           fill: #005f7f;
-          margin: 2px 0px;
-          padding: 0px;
+          margin: 2px 0;
+          padding: 0;
           width: 20px;
           height: 20px;
         }

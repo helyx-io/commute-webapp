@@ -2,10 +2,12 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
+var pg = require('pg')
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var session = require('express-session');
+var PgSessionStore = require('connect-pg-simple')(session);
 var compression = require('compression');
 var responseTime = require('response-time');
 var logger = require('morgan');
@@ -13,20 +15,24 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
 
+var config = require('./conf/config');
+
 var allowCrossDomain = require('./lib/allowCrossDomain');
 var requestLogger = require('./lib/requestLogger');
 
 var authMiddleware = require('./middlewares/authMiddleware');
 
+var basicStrategy = require('./passport/strategies/basicStrategy');
+var bearerStrategy = require('./passport/strategies/bearerStrategy');
+var localStrategy = require('./passport/strategies/localStrategy');
+var googleStrategy = require('./passport/strategies/googleStrategy');
+var clientJWTBearerStrategy = require('./passport/strategies/clientJWTBearerStrategy');
+
 var role = require('./connect-roles-fixed');
 
 var routes = require('./routes/index');
-var auth = require('./routes/auth');
-var api = require('./routes/api');
-var pemClients = require('./routes/pemClients');
-var playground = require('./routes/playground');
 
-var authService = require('./service/authService');
+var authService = require('./services/authService');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -60,9 +66,12 @@ app.use( (req, res, next) => {
 
 // TODO: Fix me to support ClientJWTBearerStrategy
 passport.serializeUser(authService.serializeUser);
-passport.deserializeUser(authService.deserializeUser);
-passport.use(authMiddleware.GoogleStrategy);
-passport.use(authMiddleware.ClientJWTBearerStrategy);
+passport.deserializeUser(authService.deserializeUserFromUserId);
+passport.use(googleStrategy);
+passport.use(clientJWTBearerStrategy);
+passport.use(basicStrategy);
+passport.use(localStrategy);
+passport.use(bearerStrategy);
 
 role.use(authService.checkRoleAnonymous);
 role.use(authService.ROLE_AGENT, authService.checkRoleAgent);
@@ -85,11 +94,19 @@ app.use(requestLogger());
 app.use(cookieParser());
 // app.use(compression({ threshold: 512 }));
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(session({
+	store: new PgSessionStore({
+		pg : pg,                                  // Use global pg-module
+		conString : config.db.url,                // Connect using something else than default DATABASE_URL env variable
+		tableName : 'sessions'                    // Use another table-name than the default "session" one
+	}),
 	resave: true,
 	saveUninitialized: true,
 	secret: process.env.SESSION_SECRET,
-	maxAge: new Date(Date.now() + 3600000),
+	cookie: {
+		maxAge: 30 * 24 * 60 * 60 * 1000
+	},
 	key: "sessionId"
 }));
 app.use(passport.initialize());
@@ -102,10 +119,6 @@ app.use(role);
 ////////////////////////////////////////////////////////////////////////////////////
 
 app.use('/', routes);
-app.use('/auth', auth);
-app.use('/api', api);
-app.use('/pem-clients', pemClients);
-app.use('/playground', playground);
 
 
 ////////////////////////////////////////////////////////////////////////////////////

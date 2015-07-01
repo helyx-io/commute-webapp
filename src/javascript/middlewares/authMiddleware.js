@@ -2,120 +2,64 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
+var logger = require('winston');
 var passport = require('passport');
-var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
-var ClientPasswordStrategy = require('passport-oauth2-client-password').Strategy;
-var ClientJWTBearerStrategy = require('passport-oauth2-jwt-bearer').Strategy;
-var BearerStrategy = require('passport-http-bearer').Strategy;
-var config = require('../conf/config');
+var Promise = require('bluebird');
+var util = require('util');
 var _ = require('lodash');
+var uuid = require('uuid');
 
+var logger = require('../lib/logger');
 var DB = require('../lib/db');
-var db = DB.schema('gtfs');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Strategies
+// Functions
 ////////////////////////////////////////////////////////////////////////////////////
 
-var clientJWTBearerStrategy = new ClientJWTBearerStrategy(
-	function(claimSetIss, done) {
-		new db.PemClient({ id: claimSetIss }).fetch().then((pemClient) => {
-			if (!pemClient) {
-				done(null, false);
-			} else {
-				done(null, pemClient);
-			}
-		}).catch((err) => {
-			done(err);
-		});
-	}
-);
-
-var googleStrategy = new GoogleStrategy({
-	clientID: config.auth.google.clientId,
-	clientSecret: config.auth.google.clientSecret,
-	callbackURL: config.auth.google.callbackUrl
-}, (accessToken, refreshToken, identifier, profile, done) => {
-	process.nextTick(() => {
-		profile.identifier = identifier;
-		new db.User({ email: profile.emails[0].value }).fetch().then((user) => {
-			if (!user) {
-				user = new db.User({
-					email: profile.emails[0].value,
-					firstName: profile.name.givenName,
-					lastName: profile.name.familyName,
-					gender: profile._json.gender,
-					avatarUrl: profile._json.picture ? profile._json.picture : "images/avatar_placeholder.png",
-					googleId: profile.id,
-					role: _.some(config.auth.admin, profile.emails[0].value) ? "ROLE_ADMIN" : "ROLE_USER"
-				});
-			} else {
-				user.firstName = profile.name.givenName;
-				user.lastName = profile.name.familyName;
-				user.gender = profile._json.gender;
-				user.googleId = profile.id;
-				user.avatarUrl = profile._json.picture ? profile._json.picture : "images/avatar_placeholder.png";
-				user.role = _.some(config.auth.admin, profile.emails[0].value) ? "ROLE_ADMIN" : "ROLE_USER";
-			}
-
-			return user.save();
-		}).then((profile) => {
-			done(undefined, profile);
-		}).catch((err) => {
-			done(err, null);
-		});
-	});
-});
+var authenticate = (req, res, next) => {
 
 
-var clientPasswordStrategy = new ClientPasswordStrategy((clientId, clientSecret, done) => {
-	new db.Client({ clientId: clientId }).fetch().then((client) => {
+	passport.authenticate('local', (err, user, info) => {
 		if (err) {
-			return done(err);
+			console.log(`[AUTH] Error: ${util.inspect(err)}`);
+			res.status(401).end();
+			return;
 		}
-		if (!client) {
-			return done(null, false);
-		}
-		if (client.clientSecret !== clientSecret) {
-			return done(null, false);
-		}
-		return done(null, client);
-	}).catch((err) => {
-		done(err);
-	});
-});
 
-/*
- BearerStrategy
+		if (!user) {
+			console.log(`[AUTH] Error: User not found.`);
+			res.status(401).end();
+			return;
+		}
 
- This strategy is used to authenticate users based on an access token (aka a
- bearer token).  The user must have previously authorized a client
- application, which is issued an access token to make requests on behalf of
- the authorizing user.
- */
-var bearerStrategy = new BearerStrategy((accessToken, done) => {
-	new db.AccessTokens({ token: accessToken }).fetch().then((token) => {
-		if (!token) {
-			done(null, false);
-		}
-		else {
-			new db.User({ userID: token.userID }).fetch().then((user) => {
-				if (!user) {
-					done(null, false);
-				}
-				else {
-					var info = {
-						scope: "*"
-					};
-					done(null, user, info);
-				}
-			});
-		}
-	}).catch((err) => {
-		done(err);
-	});
-});
+		console.log(`[AUTH] user found: ${JSON.stringify(user)}`);
+
+		req.login(user, (err) => {
+			if (err) {
+				logger.error(`Error: ${err.message}`);
+				res.status(500).end();
+				return ;
+			}
+			res.status(200).header("X-Token", user.token).end();
+		});
+	})(req, res, next);
+
+};
+
+var userRole = (user) => {
+	var userRoleCheck = false;
+
+	var adminGroup = "admin";
+
+	if (util.isArray(user.memberOf)) {
+		userRoleCheck = _.filter(user.memberOf, (userGroup) => userGroup.indexOf(adminGroup) >= 0 );
+	} else {
+		userRoleCheck = user.memberOf && user.memberOf.indexOf(adminGroup) >= 0;
+	}
+
+	return userRoleCheck ? "ROLE_ADMIN" : "ROLE_USER";
+};
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -123,8 +67,5 @@ var bearerStrategy = new BearerStrategy((accessToken, done) => {
 ////////////////////////////////////////////////////////////////////////////////////
 
 module.exports = {
-	GoogleStrategy: googleStrategy,
-	ClientPasswordStrategy: clientPasswordStrategy,
-	BearerStrategy: bearerStrategy,
-	ClientJWTBearerStrategy: clientJWTBearerStrategy
+	authenticate: authenticate
 };

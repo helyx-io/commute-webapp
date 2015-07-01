@@ -1,0 +1,123 @@
+@-webkit-keyframes ngdialog-flyin {
+  0% {
+    -webkit-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+  100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@keyframes ngdialog-flyin {
+  0% {
+    -webkit-transform: translateY(100%);
+    -ms-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+  100% {
+    -webkit-transform: translateY(0);
+    -ms-transform: translateY(0);
+    transform: translateY(0);
+  }
+}
+@-webkit-keyframes ngdialog-flyout {
+  0% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
+  }
+  100% {
+    -webkit-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+}
+@keyframes ngdialog-flyout {
+  0% {
+    -webkit-transform: translateY(0);
+    -ms-transform: translateY(0);
+    transform: translateY(0);
+  }
+  100% {
+    -webkit-transform: translateY(100%);
+    -ms-transform: translateY(100%);
+    transform: translateY(100%);
+  }
+}
+.ngdialog {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.ngdialog *,
+.ngdialog *:before,
+.ngdialog *:after {
+  -webkit-box-sizing: inherit;
+  -moz-box-sizing: inherit;
+  box-sizing: inherit;
+}
+
+.ngdialog {
+  position: fixed;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  -webkit-animation: ngdialog-flyin 0.3s;
+  animation: ngdialog-flyin 0.3s;
+}
+
+.ngdialog-overlay {
+  position: fixed;
+  background: #f9f6f2;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+.ngdialog.ngdialog-closing {
+  -webkit-animation: ngdialog-flyout 0.3s;
+  animation: ngdialog-flyout 0.3s;
+}
+
+.ngdialog-content {
+  background: white;
+  -webkit-backface-visibility: hidden;
+  -webkit-animation: ngdialog-fadein 0.5s;
+  animation: ngdialog-fadein 0.5s;
+}
+
+.ngdialog-close {
+  position: absolute;
+  top: 0;
+}
+
+.ngdialog-close:before {
+  position: fixed;
+  z-index: 4;
+  font-family: ionicons;
+  color: #333;
+  margin: 10px;
+  padding: 0 10px;
+  content: '\f405';
+  cursor: pointer;
+  font-size: 1.4em;
+  line-height: 1.5em;
+}
+
+body.ngdialog-open {
+  overflow: hidden;
+}
+
+@media (max-width: 580px), (max-height: 780px) {
+  .ngdialog-overlay {
+    background: #333;
+  }
+
+  .ngdialog-close:before {
+    color: #f9f6f2;
+  }
+}

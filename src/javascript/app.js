@@ -4,7 +4,7 @@
 
 var passport = require('passport');
 var config = require('./conf/config');
-var logger = require('./log/logger');
+var logger = require('./lib/logger');
 
 console.log(`env: ${JSON.stringify(process.env, undefined, 2)}`);
 console.log(`config: ${JSON.stringify(config, undefined, 2)}`);
