@@ -95,7 +95,7 @@ commuteApp.config(function ($stateProvider, $urlRouterProvider) {
 				'$timeout','$state',
 				function($timeout,  $state ) {
 					$timeout(function() {
-						$state.go('tab.activities')
+						$state.go('map');
 					},0)
 				}]
 		});

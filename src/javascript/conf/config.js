@@ -56,16 +56,43 @@ module.exports = {
 		}
 	},
 	service: {
-		mandrill: {
-			apiKey: process.env.MANDRILL_API_KEY
-		},
 		commute: {
 			baseURL: process.env.GTFS_API_BASE_URL || "http://localhost:4000"
+		}
+	},
+	email: {
+		enabledProviders: (process.env.ENABLED_EMAIL_PROVIDERS || 'mandrill').split(','),
+			mandrill: {
+			apiKey: process.env.MANDRILL_API_KEY,
+				from: process.env.MANDRILL_FROM || 'contact@commute.sh'
+		},
+		mailgun: {
+			apiKey: process.env.MAILGUN_API_KEY,
+				domain: process.env.MAILGUN_DOMAIN,
+				from: process.env.MAILGUN_FROM || 'contact@commute.sh'
+		},
+		sendgrid: {
+			apiUser: process.env.SENDGRID_API_USER,
+				apiKey: process.env.SENDGRID_API_KEY,
+				from: process.env.SEND_GRID_FROM || 'contact@commute.sh'
+		},
+		smtp: {
+			host: process.env.SMTP_HOST,
+				port: process.env.SMTP_PORT,
+				user: process.env.SMTP_USER,
+				password: process.env.SMTP_PASSWORD,
+				from: process.env.SMTP_FROM
 		}
 	},
 	redis: {
 		host: process.env.REDIS_HOST || process.env.SSDB_PORT_8888_TCP_ADDR || 'localhost',
 		port: process.env.REDIS_PORT || process.env.SSDB_PORT_8888_TCP_PORT || 8888
+	},
+	apns: {
+		enabled: process.env.APNS_ENABLED == "true",
+		sandboxEnabled: process.env.APNS_SANDBOX_ENABLED == "true",
+		certFile: process.env.APNS_CERT_FILE || `${__dirname}/../certs/apns/debug/apnagent-dev-cert.pem`,
+		keyFile: process.env.APNS_KEY_FILE || `${__dirname}/../certs/apns/debug/apnagent-dev-key.pem`
 	},
 	db: db,
 	monitoring: {

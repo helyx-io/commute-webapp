@@ -73,12 +73,12 @@ router.get('/login', (req, res) => {
 
 router.get('/logout', (req, res) => {
 	req.logout();
-	//return res.status(200).end();
-//});
+//	res.status(200).end();
+});
 //
 //router.post('/sign-in', authMiddleware.authenticate);
 //
-//router.post('/sign-up', (req, res) => {
+router.post('/sign-up', (req, res) => {
 	var firstname = req.body.firstname;
 	var lastname = req.body.lastname;
 	var username = req.body.username;
@@ -86,10 +86,8 @@ router.get('/logout', (req, res) => {
 	authService.signUp(firstname, lastname, username).then(() => {
 		res.status(200).end();
 	}).catch((err) => {
-		if (err) {
-			logger.error(`1 - Err: ${err.message} - Stack: ${err.stack}`);
-		}
-		res.status(500).end();
+		logger.error(`Err: ${err.message} - Stack: ${err.stack}`);
+		res.status(err.code ? 403 : 500).json({ message: err.message, reason: err.reason });
 	});
 });
 
@@ -99,10 +97,8 @@ router.post('/password/reset', (req, res) => {
 	authService.resetPassword(username).then(() => {
 		res.status(200).end();
 	}).catch((err) => {
-		if (err) {
-			logger.error(`2 - Err: ${err.message} - Stack: ${err.stack}`);
-		}
-		res.status(500).end();
+		logger.error(`Err: ${err.message} - Stack: ${err.stack}`);
+		res.status(err.code ? 403 : 500).json({ message: err.message, reason: err.reason });
 	});
 });
 
@@ -128,8 +124,8 @@ router.post('/password/change', (req, res) => {
 	authService.changePassword(resetToken, password).then(() => {
 		res.redirect('/');
 	}).catch((err) => {
-		logger.error(`3 - Err: ${err.message} - Stack: ${err.stack}`);
-		res.status(500).end();
+		logger.error(`Err: ${err.message} - Stack: ${err.stack}`);
+		res.status(err.code ? 403 : 500).json({ message: err.message, reason: err.reason });
 	});
 });
 

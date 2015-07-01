@@ -98,6 +98,11 @@ gulp.task('copy-views', function () {
 		.pipe(gulp.dest('build/views'));
 });
 
+gulp.task('copy-templates', function () {
+	return gulp.src('templates/**/*')
+		.pipe(gulp.dest('build/templates'));
+});
+
 gulp.task('copy-project-resources', function () {
 	return gulp.src('{package.json,README.md}')
 		.pipe(gulp.dest('build/'));
@@ -144,7 +149,7 @@ gulp.task('watch', ['watch-sass', 'watch-views', 'watch-public-scripts']);
 gulp.task('default',
 	function(callback) {
 		runSequence(
-			['build-sources', 'build-sass', 'modernizr-min', 'copy-views', 'copy-project-resources'],
+			['build-sources', 'build-sass', 'modernizr-min', 'copy-views', 'copy-templates', 'copy-project-resources'],
 			'copy-public',
 			'usemin-public-html',
 			callback

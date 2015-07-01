@@ -10,10 +10,13 @@ var session = require('express-session');
 var PgSessionStore = require('connect-pg-simple')(session);
 var compression = require('compression');
 var responseTime = require('response-time');
-var logger = require('morgan');
+var morgan = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var passport = require('passport');
+var logger = require('./lib/logger');
+
+var apns = require("./lib/apns");
 
 var config = require('./conf/config');
 
@@ -60,6 +63,9 @@ app.use( (req, res, next) => {
 });
 
 
+apns.init();
+
+
 ////////////////////////////////////////////////////////////////////////////////////
 // Security
 ////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +92,7 @@ role.setFailureHandler(authService.failureHandler);
 
 app.use(favicon(__dirname + '/public/favicon.ico'));
 app.use(responseTime());
-app.use(logger('dev'));
+app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(allowCrossDomain());
@@ -125,11 +131,23 @@ app.use('/', routes);
 // 404
 ////////////////////////////////////////////////////////////////////////////////////
 
-// catch 404 and forward to error handler
 app.use((req, res, next) => {
-	var err = new Error('Not Found');
+	var err = new Error('Not Found - ' + req.originalUrl);
 	err.status = 404;
-	next(err);
+//	next(err);
+
+	var acceptHeader = req.header('Accept');
+
+	if (acceptHeader.indexOf('application/json') >= 0) {
+		res.status(404).json(err);
+	} else if (acceptHeader.indexOf('text/html') >= 0) {
+		res.status(404).render('error', {
+			message: err.message,
+			error: err
+		});
+	} else {
+		res.status(404).end();
+	}
 });
 
 
@@ -141,23 +159,26 @@ app.use((req, res, next) => {
 // will print stacktrace
 if (app.get('env') === 'development') {
 	app.use((err, req, res, next) => {
+		logger.info(`Error: ${err.message} - Stack: ${err.stack}`);
 		res.status(err.status || 500);
 		res.render('error', {
 			message: err.message,
-			error: err
+			error: err,
+			stack: err.stack ? err.stack.replace(/\n/g, '<br/>') : ''
+		});
+	});
+} else {
+// production error handler
+// no stacktraces leaked to user
+	app.use((err, req, res, next) => {
+		logger.info(`Error: ${err.message} - Stack: ${err.stack}`);
+		res.status(err.status || 500);
+		res.render('error', {
+			message: err.message,
+			error: {}
 		});
 	});
 }
-
-// production error handler
-// no stacktraces leaked to user
-app.use((err, req, res, next) => {
-	res.status(err.status || 500);
-	res.render('error', {
-		message: err.message,
-		error: {}
-	});
-});
 
 
 ////////////////////////////////////////////////////////////////////////////////////

@@ -2,23 +2,19 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var logger = require('winston');
-
+var fs = require('fs');
 var bcrypt = require('bcryptjs');
+var uuid = require('uuid');
+var moment = require('moment');
+var Promise = require('bluebird');
 
 var config = require('../conf/config');
+var logger = require('../lib/logger');
+
+var emailService = require('./emailService');
 
 var DB = require('../lib/db');
 var db = DB.schema('commute');
-
-var mandrill = require('mandrill-api/mandrill');
-var mandrillClient = new mandrill.Mandrill(config.service.mandrill.apiKey);
-
-var uuid = require('uuid');
-
-var moment = require('moment');
-
-var Promise = require('bluebird');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -29,6 +25,14 @@ var ROLE_AGENT = "ROLE_AGENT";
 var ROLE_SUPER_AGENT = "ROLE_SUPER_AGENT";
 var ROLE_ADMIN = "ROLE_ADMIN";
 var ROLE_ANONYMOUS = "ROLE_ANONYMOUS";
+
+
+////////////////////////////////////////////////////////////////////////////////////
+// Templates
+////////////////////////////////////////////////////////////////////////////////////
+
+var RESET_PASSWORD_HTML_EMAIL_TPL = fs.readFileSync(`${__dirname}/../templates/email/reset-password.html`, 'utf-8');
+var RESET_PASSWORD_TEXT_EMAIL_TPL = fs.readFileSync(`${__dirname}/../templates/email/reset-password.txt`, 'utf-8');
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -80,8 +84,8 @@ var serializeUser = (user, done) => {
 };
 
 var deserializeUserFromToken = (token, done) => {
-	return db.knex("users").where({ token: token }).then((foundUser) => {
-		if (!foundUser || foundUser.length != 1) {
+	return db.knex("users").where({ token: token }).first().then((foundUser) => {
+		if (!foundUser) {
 			done(new Error(`User not found for token: '${token}'`));
 		}
 		else {
@@ -93,8 +97,8 @@ var deserializeUserFromToken = (token, done) => {
 };
 
 var deserializeUserFromUserId = (userId, done) => {
-	return db.knex("users").where({ id: userId }).then((foundUser) => {
-		if (!foundUser || foundUser.length != 1) {
+	return db.knex("users").where({ id: userId }).first().then((foundUser) => {
+		if (!foundUser) {
 			done(new Error(`User not found for user id: '${userId}'`));
 		}
 		else {
@@ -121,10 +125,19 @@ var signUp = (firstname, lastname, username) => {
 		reset_demand_expiration_date: moment().add(2, 'hours').format('YYYY-MM-DDTHH:mm:ss')
 	};
 
-	return db.knex("users").insert(userModel).then(function() {
-		return sendPasswordResetDemand('Sign Up', resetToken, username);
-	});
+	return db.knex('users').where({ email: email }).first().then((user) => {
 
+		if (user) {
+			var error = new Error(`Email '${email}' already match an existing account.`);
+			error.code = "UNKNOWN_EMAIL";
+			error.reason = `Email '${email}' already match an existing account.`;
+			return Promise.reject(error);
+		} else {
+			return db.knex("users").insert(userModel).then(function () {
+				return sendPasswordResetDemand('Sign Up', resetToken, username);
+			});
+		}
+	});
 };
 
 var resetPassword = (username) => {
@@ -139,16 +152,49 @@ var resetPassword = (username) => {
 	}).then(() => {
 		return sendPasswordResetDemand("Password reset", resetToken, email);
 	});
+
+
+	return db.knex('users').where({ email: email }).first().then((user) => {
+
+		if (!user) {
+			var error = new Error(`Email '${email}' does not match an existing account. Please contact commute.io.`);
+			error.code = "UNKNOWN_EMAIL";
+			error.reason = `Email '${email}' does not match an existing account. Please contact commute.io.`;
+			return Promise.reject(error);
+		} else {
+			var resetToken = user.resetToken || uuid.v4();
+
+			var userDataToUpdate = {
+				resetToken: resetToken,
+				resetDemandExpirationDate: moment().add(2, 'hours').format('YYYY-MM-DDTHH:mm:ss')
+			};
+
+			return db.knex('users').where({ email: email }).update(userDataToUpdate).then(() => {
+
+				var isDefaultPortForScheme =  (config.port == 80 && config.scheme == 'http') || (config.port == 443 && config.scheme == 'https');
+				var linkBaseURL = isDefaultPortForScheme ? `${config.scheme}://${config.host}` : `${config.scheme}://${config.host}:${config.port}`;
+
+				var link = `${linkBaseURL}/api/auth/password/reset?token=${resetToken}`;
+
+				var htmlBody =  RESET_PASSWORD_HTML_EMAIL_TPL.replace(/\$\{link\}/g, link).replace(/\$\{givenName\}/g, user.givenName);
+				var textBody = RESET_PASSWORD_TEXT_EMAIL_TPL.replace(/\$\{link\}/g, link).replace(/\$\{givenName\}/g, user.givenName);
+				var subject = "Commute.io - Password reset";
+
+				return emailService.sendEmail(email, user.givenName, subject, htmlBody, textBody, undefined, 'Commute.io');
+			});
+
+		}
+	})
 };
 
 var sendPasswordResetDemand = (subject, resetToken, username) => {
 
 	var deferred = Promise.pending();
 
-	sendPasswordResetDemandWithMandrill(subject, resetToken, username).then((result) => {
+	sendPasswordResetDemand(subject, resetToken, username).then((result) => {
 		deferred.resolve(result);
 	}).catch((err) => {
-		sendPasswordResetDemandWithMailGun(subject, resetToken, username).then(() => {
+		sendPasswordResetDemand(subject, resetToken, username).then(() => {
 
 			deferred.resolve(result);
 		}).catch((err) => {
@@ -159,83 +205,35 @@ var sendPasswordResetDemand = (subject, resetToken, username) => {
 	return deferred.promise;
 };
 
-var sendPasswordResetDemandWithMailGun =  (subject, resetToken, username) => {
+var sendPasswordResetDemand =  (subject, resetToken, username) => {
 
 	var email = username;
 
 	var isDefaultPortForScheme =  (config.port == 80 && config.scheme == 'http') || (config.port == 443 && config.scheme == 'https');
 	var linkBaseURL = isDefaultPortForScheme ? `${config.scheme}://${config.host}` : `${config.scheme}://${config.host}:${config.port}`;
 
-	var link = `${linkBaseURL}/?#/password/change?token=${resetToken}`;
+	var link = `${linkBaseURL}/#/password/change?token=${resetToken}`;
 
-	var deferred = Promise.pending();
+	var text = link;
+	var html = `<a href="${link}">${link}</a>`;
 
-	var message = {
-		"html": `<a href="${link}">${link}</a>`,
-		"text": link,
-		"subject": `Commute - ${subject}`,
-		"from_email": "no-reply@commute.sh",
-		"from_name": "Commute",
-		"to": [{
-			"email": email,
-			"name": "Commute",
-			"type": "to"
-		}],
-		"headers": {
-			"Reply-To": "no-reply@commute.sh"
-		}
-	};
-
-	mandrillClient.messages.send({"message": message}, function(result) {
-		logger.debug("Mail send result: " + JSON.stringify(result));
-		deferred.resolve(result);
-	}, function(err) {
-		logger.error('A mandrill error occurred: ' + err.name + ' - ' + err.message);
-		deferred.reject(err);
-	});
-
-	return deferred.promise;
-
+	return emailService.sendEmail(email, username, subject, html, text, undefined, 'Commute.io');
 };
 
 
-var sendPasswordResetDemandWithMandrill = (subject, resetToken, username) => {
+var sendPasswordResetDemand = (subject, resetToken, username) => {
 
 	var email = username;
 
 	var isDefaultPortForScheme =  (config.port == 80 && config.scheme == 'http') || (config.port == 443 && config.scheme == 'https');
 	var linkBaseURL = isDefaultPortForScheme ? `${config.scheme}://${config.host}` : `${config.scheme}://${config.host}:${config.port}`;
 
-	var link = `${linkBaseURL}/?#/password/change?token=${resetToken}`;
+	var link = `${linkBaseURL}/#/password/change?token=${resetToken}`;
 
-	var deferred = Promise.pending();
+	var text = link;
+	var html = `<a href="${link}">${link}</a>`;
 
-	var message = {
-		"html": `<a href="${link}">${link}</a>`,
-		"text": link,
-		"subject": `Commute - ${subject}`,
-		"from_email": "no-reply@commute.sh",
-		"from_name": "Commute",
-		"to": [{
-			"email": email,
-			"name": "Commute",
-			"type": "to"
-		}],
-		"headers": {
-			"Reply-To": "no-reply@commute.sh"
-		}
-	};
-
-	mandrillClient.messages.send({"message": message}, function(result) {
-		logger.debug("Mail send result: " + JSON.stringify(result));
-		deferred.resolve(result);
-	}, function(err) {
-		logger.error('A mandrill error occurred: ' + err.name + ' - ' + err.message);
-		deferred.reject(err);
-	});
-
-	return deferred.promise;
-
+	return emailService.sendEmail(email, username, subject, html, text, undefined, 'Commute.io');
 };
 
 

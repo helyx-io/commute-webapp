@@ -2,7 +2,6 @@
 // Imports
 ////////////////////////////////////////////////////////////////////////////////////
 
-var logger = require('winston');
 var passport = require('passport');
 var Promise = require('bluebird');
 var util = require('util');
