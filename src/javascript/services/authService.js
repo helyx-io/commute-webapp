@@ -89,7 +89,7 @@ var deserializeUserFromToken = (token, done) => {
 			done(new Error(`User not found for token: '${token}'`));
 		}
 		else {
-			done(undefined, foundUser[0]);
+			done(undefined, foundUser);
 		}
 	}).catch((err) => {
 		done(err);
@@ -102,7 +102,7 @@ var deserializeUserFromUserId = (userId, done) => {
 			done(new Error(`User not found for user id: '${userId}'`));
 		}
 		else {
-			done(undefined, foundUser[0]);
+			done(undefined, foundUser);
 		}
 	}).catch((err) => {
 		done(err);

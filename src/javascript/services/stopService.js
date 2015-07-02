@@ -26,7 +26,12 @@ var findNearestStops = (agencyKey, lat, lon, distance, date) => {
 	var url = `${config.service.commute.baseURL}/api/agencies/${agencyKey}/stops/${date}/nearest?lat=${lat}&lon=${lon}&distance=${distance}`;
 	logger.info(`Url: ${url}`);
 
+	var start = moment();
+
 	request({ url: url }, (error, response, body) => {
+
+		logger.error('Duration: ' + moment.duration(moment().diff(start)).asMilliseconds());
+
 		if (error) {
 			logger.error(`[ERROR] Message: ${error.message} - ${error.stack}`);
 			deferred.reject(error);
