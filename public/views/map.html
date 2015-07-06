@@ -1,23 +1,11 @@
 
     <div id="main" class="ng-cloack" ng-controller="MapLayoutCtrl">
 
-        <div id="sidebar-left" ng-show="showLeftSidebar">
-            <div id="sidebar-left-content">
-                <div id="sidebar-calendar-container" ng-cloak ng-controller="MapSidebarCalendarCtrl">
-                    <div id="sidebar-calendar">
-                        <h1>Calendar</h1>
-                        <div id="days">
-                            <div id="day-{{index}}" ng-repeat="day in days" class="day {{day._class}}">
-                                <aside>{{day.day}}</aside>
-                                <h4>{{day.weekDay}}</h4>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="sidebar-left" ng-show="showLeftSidebar" class="hidden">
+            <div id="sidebar-left-content"></div>
         </div>
 
-        <div id="main-content">
+        <div id="main-content" class="left-full">
             <div id="map" class="ng-cloack" ng-controller="MapCtrl">
                 <div id="map-canvas"></div>
             </div>

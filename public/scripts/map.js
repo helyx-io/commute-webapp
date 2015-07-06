@@ -80,61 +80,12 @@ commuteApp.run(function($rootScope, Globals, AgencyService, StopService) {
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Services
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-commuteApp.factory('CalendarService', function($http, $q, Globals) {
-	var calendarService = {};
-
-	var daysOfWeek = {
-		1: "Monday",
-		2: "Tuesday",
-		3: "Wednesday",
-		4: "Thursday",
-		5: "Friday",
-		6: "Saturday",
-		7: "Sunday"
-	};
-
-	calendarService.dayOfWeekAsString = function(day) {
-		return daysOfWeek[day];
-	};
-
-	calendarService.buildCalendar = function() {
-
-		var defer = $q.defer();
-
-		// Make it comparable with other built dates
-		var today = moment(moment().format('YYYY-MM-DD'), 'YYYY-MM-DD');
-		var selectedDate = moment(Globals.date, 'YYYY-MM-DD');
-
-		var startOfCalendar = moment(today).add(-10, 'days');
-
-		var days = [];
-
-		var day = moment(startOfCalendar);
-		for (var i = 0 ; i < 100 ; i++) {
-			var dayClass = day.isSame(today) ? 'today' : (day.isSame(selectedDate) ? 'selected': '');
-			days.push({ day: day.format('D'), weekDay: calendarService.dayOfWeekAsString(day.format('E')), date: day, _class: dayClass });
-			day = moment(day).add(1, 'days');
-		}
-
-		defer.resolve(days);
-
-		return defer.promise;
-	};
-
-	return calendarService;
-});
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Controllers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 commuteApp.controller('MapLayoutCtrl', function($rootScope, $scope) {
 
-	$scope.showLeftSidebar = true;
+	$scope.showLeftSidebar = false;
 	$scope.showRightSidebar = true;
 
 	$scope.viewPrimaryActions = [{

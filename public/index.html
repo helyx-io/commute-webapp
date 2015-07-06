@@ -81,21 +81,34 @@
     <div id="header" ng-controller="HeaderCtrl">
 
         <div id="settings" ng-controller="SettingsCtrl">
-            <button id="btn-calendar" class="selected" ng-click="toggleLeftSidebar()">
+            <button id="btn-calendar" class="selected" ng-click="toggleLeftSidebar()" style="display: none;">
                 <span><i class="icon ion-calendar"></i></span>
             </button>
-            <button id="btn-stops" class="selected" ng-click="toggleRightSidebar()">
+            <button id="btn-stops" class="selected" ng-click="toggleRightSidebar()" style="display: none;">
                 <span><i class="icon ion-grid"></i></span>
             </button>
-            <button id="btn-settings">
+            <button id="btn-settings" style="display: none;">
                 <span><i class="icon ion-gear-a"></i></span>
             </button>
-            <button id="btn-logout" ng-click="logout()">
-                <span><i class="icon ion-android-exit"></i></span>
-            </button>
-        </div>
 
-        <div id="header-date">
+
+            <ul>
+                <li>
+                    <button id="btn-more">
+                        <span><i class="icon ion-android-more-vertical"></i></span>
+                    </button>
+
+                    <ul>
+                        <li ng-click="logout()">
+                            <span><i class="icon ion-android-exit"></i></span> <h1>Logout</h1>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+
+         </div>
+
+        <div id="header-date" style="display: none;">
             <button id="btn-date-previous">
                 <span><i class="icon ion-chevron-left"></i></span>
             </button>

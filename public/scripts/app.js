@@ -99,7 +99,7 @@ commuteApp.controller('HeaderCtrl', function($scope, Globals) {
 
 commuteApp.controller('SettingsCtrl', function($scope, $rootScope) {
 
-	$scope.showLeftSidebar = true;
+	$scope.showLeftSidebar = false;
 	$scope.showRightSidebar = true;
 
 	$scope.toggleLeftSidebar = function() {

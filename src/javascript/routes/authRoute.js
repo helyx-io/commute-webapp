@@ -73,7 +73,7 @@ router.get('/login', (req, res) => {
 
 router.get('/logout', (req, res) => {
 	req.logout();
-//	res.status(200).end();
+	res.status(200).end();
 });
 //
 //router.post('/sign-in', authMiddleware.authenticate);

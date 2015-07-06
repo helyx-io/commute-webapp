@@ -99,6 +99,8 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   width: 100%;
   top: 50px;
+  left: 0;
+  right: 0;
 //  bottom: 24px;
   bottom: 0;
 }
@@ -108,7 +110,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0;
   padding: 0;
   left: 240px;
-  right: 380px;
+  right: 480px;
   top: 0;
   bottom: 0;
 
@@ -125,13 +127,13 @@ h1, h2, h3, h4, h5, h6 {
   position: absolute;
   top: 0;
   right: 0;
-  width: 420px;
+  width: 480px;
   bottom: 0;
   background: #FFFFFF;
   border-left: #E0E0E0 1px solid;
 
   &.hidden {
-    right: -420px;
+    right: -480px;
   }
 }
 
@@ -212,6 +214,7 @@ button {
 #settings {
   z-index: 10000;
   float: right;
+  padding-right: 10px;
   height: 50px;
   text-align: right;
 
@@ -230,6 +233,93 @@ button {
     }
 
   }
+
+  >ul {
+    z-index: 2;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: inline;
+    -webkit-box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+    -moz-box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.15);
+
+    >li {
+      z-index: 2;
+      margin: 0;
+      padding: 0;
+      display: inline-block;
+      position: relative;
+      cursor: pointer;
+      -webkit-transition: all 0.2s;
+      -moz-transition: all 0.2s;
+      -ms-transition: all 0.2s;
+      -o-transition: all 0.2s;
+      transition: all 0.2s;
+
+      >ul {
+        padding: 0;
+        position: absolute;
+        top: 50px;
+        right: 0;
+        min-width: 200px;
+        text-align: left;
+        -webkit-box-shadow: none;
+        -moz-box-shadow: none;
+        box-shadow: none;
+        display: none;
+        opacity: 0;
+        visibility: hidden;
+        -webkit-transiton: opacity 0.2s;
+        -moz-transition: opacity 0.2s;
+        -ms-transition: opacity 0.2s;
+        -o-transition: opacity 0.2s;
+        -transition: opacity 0.2s;
+
+        >li {
+          padding: 15px;
+          padding-left: 30px;
+          background: #000;
+          display: block;
+          color: #fff;
+
+          &:hover { background: #222; }
+
+          >span>i.icon {
+            color: #fff!important;
+          }
+
+          >h1 {
+            color: #fff;
+            font-weight: 200;
+            font-size: 1em;
+            margin: 0;
+            padding: 0;
+            display: inline;
+            padding-left: 10px;
+            padding-right: 20px;
+          }
+        }
+
+      }
+
+      &:hover {
+        ul {
+          display: block;
+          opacity: 1;
+          visibility: visible;
+        }
+
+        &:hover {
+          background: #000;
+          color: #fff;
+        }
+      }
+    }
+
+  }
+
+
 }
 
 #settings .selected {
