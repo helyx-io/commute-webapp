@@ -51,7 +51,7 @@
                                 </div>
                                 <div class="route-content" ng-show="showContent">
                                     <ul class="stop-times">
-                                        <li ng-repeat="stop_time in route.stop_times">
+                                        <li ng-repeat="stop_time in route.stop_times track by $index">
                                             {{::stop_time}}
                                         </li>
                                     </ul>

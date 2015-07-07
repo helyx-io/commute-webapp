@@ -97,8 +97,13 @@ commuteApp.controller('HeaderCtrl', function($scope, $state, Globals) {
 
 
 	$scope.showCards = function() {
-		console.log('Goto cards');
+		console.log('Go to cards');
 		$state.go('cards');
+	};
+
+	$scope.showMap = function() {
+		console.log('Go to map');
+		$state.go('map');
 	};
 
 

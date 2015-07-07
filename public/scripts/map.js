@@ -7,22 +7,41 @@ var commuteApp = angular.module('commuteApp');
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Run
+/// Controllers
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-commuteApp.run(function($rootScope, Globals, AgencyService, StopService) {
+commuteApp.controller('MapLayoutCtrl', function($rootScope, $scope, Globals, AgencyService, StopService) {
+
+	$scope.showLeftSidebar = false;
+	$scope.showRightSidebar = true;
+
+	var mapElt = angular.element("#map");
+	var stopsElt = angular.element('#stops');
+
+
+
+
+
+
+
+	$scope.position = undefined;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Root scope event listeners
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	$rootScope.$on('position', function(event, position) {
-		AgencyService.findMatchingAgencyByPosition(position).then(function(agencies) {
+		$scope.position = position;
+		$scope.loadAgenciesMatchingPosition();
+	});
+
+	$scope.loadAgenciesMatchingPosition = function() {
+		AgencyService.findMatchingAgencyByPosition($scope.position).then(function(agencies) {
 			Globals.selectAgencies(agencies);
 		}).catch(function(err) {
 			console.log("Error:" + JSON.stringify(err));
 		});
-	});
+	};
 
 
 	$rootScope.$on('agencies', function(event, agencies) {
@@ -44,18 +63,18 @@ commuteApp.run(function($rootScope, Globals, AgencyService, StopService) {
 						route.name = route.name.substr(0, 3);
 
 						route.stop_times = _.chain(route.stop_times)
-						.filter(function(stopTime) {
-							return moment(stopTime, 'HH:mm').isAfter(now);
-						})
-						.sortBy(function(stopTime) {
-							return stopTime;
-						})
-						.map(function(stopTime) {
-							stopTime = stopTime.indexOf('24') == 0 ? '00' + stopTime.substr(2) : stopTime;
+							.filter(function(stopTime) {
+								return moment(stopTime, 'HH:mm').isAfter(now);
+							})
+							.sortBy(function(stopTime) {
+								return stopTime;
+							})
+							.map(function(stopTime) {
+								stopTime = stopTime.indexOf('24') == 0 ? '00' + stopTime.substr(2) : stopTime;
 
-							return stopTime;
-						})
-						.value();
+								return stopTime;
+							})
+							.value();
 
 						route.stop_times = route.stop_times.slice(0, 10);
 					});
@@ -76,30 +95,14 @@ commuteApp.run(function($rootScope, Globals, AgencyService, StopService) {
 		});
 	});
 
-});
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Controllers
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-commuteApp.controller('MapLayoutCtrl', function($rootScope, $scope) {
 
-	$scope.showLeftSidebar = false;
-	$scope.showRightSidebar = true;
 
-	$scope.viewPrimaryActions = [{
-		icon: 'ion-calendar',
-		selected: true,
-		onClick: $scope.toggleLeftSidebar
-	}, {
-		icon: 'ion-grid',
-		selected: true,
-		onClick: $scope.toggleRightSidebar
-	}];
 
-	var mapElt = angular.element("#map");
-	var stopsElt = angular.element('#stops');
+
+
 
 	$scope.toggleMapVisibility = function() {
 		if (stopsElt.hasClass('stop-hidden')) {
@@ -308,6 +311,11 @@ commuteApp.controller('MapCtrl', function($rootScope, $scope, $q, Globals) {
 		Globals.setPosition(undefined);
 	};
 
-	google.maps.event.addDomListener(window, 'load', $scope.initialize);
+	$scope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+		console.log("State Change: State change success!");
+		$scope.initialize();
+	});
+
+//	google.maps.event.addDomListener(window, 'load', $scope.initialize);
 
 });

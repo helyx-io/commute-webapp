@@ -19,8 +19,6 @@ commuteApp.run(function($rootScope, UsersApiService) {
 
 		console.log("toState: " + JSON.stringify(toState));
 
-		$rootScope.viewPrimaryActions = toState.$scope ? toState.$scope.viewPrimaryActions : [];
-
 		if (!$rootScope.currentUser && ( !toState.data || toState.data.requireLogin === undefined || toState.data.requireLogin ) ) {
 			UsersApiService.me().then(function (me) {
 				console.log("User is authenticated - me: " + JSON.stringify(me));
