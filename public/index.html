@@ -40,6 +40,8 @@
     <script src="/bower_components/angular-sanitize/angular-sanitize.js"></script>
     <script src="/bower_components/ngDialog/js/ngDialog.js"></script>
     <script src="/bower_components/lodash/dist/lodash.js"></script>
+    <script src="/bower_components/classie/classie.js"></script>
+    <script src="/scripts/grid/grid.js"></script>
     <!-- endbuild -->
 
 <!--
@@ -58,6 +60,7 @@
     <script src="/scripts/gmap.js"></script>
     <script src="/scripts/gtfs.js"></script>
     <script src="/scripts/map.js"></script>
+    <script src="/scripts/cards.js"></script>
     <script src="/scripts/router.js"></script>
     <!-- endbuild -->
 
@@ -91,6 +94,9 @@
                 <span><i class="icon ion-gear-a"></i></span>
             </button>
 
+            <button id="btn-cards-grid" ng-click="showCards()">
+                <span><i class="icon ion-grid"></i></span>
+            </button>
 
             <ul>
                 <li>

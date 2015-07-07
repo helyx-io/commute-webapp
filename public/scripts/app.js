@@ -91,9 +91,16 @@ commuteApp.controller('AppCtrl', function($rootScope, $scope, $state, UsersApiSe
 
 });
 
-commuteApp.controller('HeaderCtrl', function($scope, Globals) {
+commuteApp.controller('HeaderCtrl', function($scope, $state, Globals) {
 
 	$scope.date = moment(Globals.date, "YYYY-MM-DD").format("DD/MM/YYYY");
+
+
+	$scope.showCards = function() {
+		console.log('Goto cards');
+		$state.go('cards');
+	};
+
 
 });
 
